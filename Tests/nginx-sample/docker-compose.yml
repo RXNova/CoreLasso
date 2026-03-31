@@ -1,0 +1,22 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      # Bind mount: serve local html files directly (good for development)
+      - ./html:/usr/share/nginx/html:ro
+      # Named volume: persist nginx access/error logs across container restarts
+      - nginx-logs:/var/log/nginx
+      # Named volume: persist nginx cache
+      - nginx-cache:/var/cache/nginx
+    restart: unless-stopped
+
+volumes:
+  # Named volumes are managed by the container runtime
+  # Data persists even after the container is stopped or removed
+  nginx-logs:
+  nginx-cache:

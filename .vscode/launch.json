@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CoreLasso}",
+            "name": "Debug CoreLassoApp",
+            "target": "CoreLassoApp",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug CoreLassoApp"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CoreLasso}",
+            "name": "Release CoreLassoApp",
+            "target": "CoreLassoApp",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release CoreLassoApp"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CoreLasso}",
+            "name": "Debug lasso",
+            "target": "lasso",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug lasso"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CoreLasso}",
+            "name": "Release lasso",
+            "target": "lasso",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release lasso"
+        }
+    ]
+}
