@@ -174,7 +174,6 @@ MIT
 
 - **Container lifecycle** — create, start, stop, kill, and delete containers
 - **Docker Desktop–style UI** — sidebar navigation, resizable table columns, hover-reveal action buttons
-- **Power profiles** — schedule workloads on E-Cores (Efficiency), mixed, or P-Cores (Performance) via Apple Silicon QoS
 - **Port mappings** — expose host↔guest ports with TCP/UDP labels and IP display
 - **OCI registry client** — pull images from Docker Hub and compatible registries
 - **Ant Design token system** — consistent color/spacing tokens across all UI components
@@ -233,16 +232,6 @@ swift build
 # Release build
 swift build -c release
 ```
-
-## Power Profiles
-
-CoreLasso maps workloads to Apple Silicon core clusters via Swift Concurrency task priority:
-
-| Profile | Cores | Use case |
-|---|---|---|
-| Efficiency | E-Cores | Long-running, battery-friendly workloads |
-| Balanced | Mixed | General purpose |
-| Performance | P-Cores | Latency-sensitive or compute-heavy workloads |
 
 ## License
 
