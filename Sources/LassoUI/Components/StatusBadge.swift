@@ -1,9 +1,10 @@
 import SwiftUI
 import LassoCore
 
-/// A Material Design chip displaying a container's lifecycle state.
+/// A Material Design 3 chip displaying a container's lifecycle state.
 public struct StatusBadge: View {
 
+    @Environment(\.md3Scheme) private var scheme
     private let state: ContainerState
     @State private var pulsing = false
 
@@ -30,11 +31,11 @@ public struct StatusBadge: View {
                     .frame(width: 7, height: 7)
             }
             Text(label)
-                .font(.caption.weight(.medium))
+                .font(MD3Typography.labelMedium)
                 .foregroundStyle(tagColor)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(tagBackground)
         .clipShape(Capsule())
         .onAppear { if state == .running { pulsing = true } }
@@ -45,21 +46,21 @@ public struct StatusBadge: View {
 
     private var tagColor: Color {
         switch state {
-        case .running:                        LassoColors.antSuccess
-        case .stopped, .deleted:              LassoColors.antTextSecondary
-        case .error:                          LassoColors.antError
-        case .creating, .created, .starting:  LassoColors.antBlue
-        case .stopping, .deleting:            LassoColors.antWarning
+        case .running:                        scheme.success
+        case .stopped, .deleted:              scheme.onSurfaceVariant
+        case .error:                          scheme.error
+        case .creating, .created, .starting:  scheme.primary
+        case .stopping, .deleting:            scheme.warning
         }
     }
 
     private var tagBackground: Color {
         switch state {
-        case .running:                        LassoColors.antSuccessBg
-        case .stopped, .deleted:              Color(white: 0.93)
-        case .error:                          LassoColors.antErrorBg
-        case .creating, .created, .starting:  LassoColors.antBlueBg
-        case .stopping, .deleting:            LassoColors.antWarningBg
+        case .running:                        scheme.successContainer
+        case .stopped, .deleted:              scheme.surfaceContainerHighest
+        case .error:                          scheme.errorContainer
+        case .creating, .created, .starting:  scheme.primaryContainer
+        case .stopping, .deleting:            scheme.warningContainer
         }
     }
 

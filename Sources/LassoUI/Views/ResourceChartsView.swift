@@ -8,6 +8,7 @@ import LassoData
 public struct ResourceChartsView: View {
 
     @State private var chartsVM: OverviewChartsViewModel
+    @Environment(\.md3Scheme) private var scheme
 
     private let runningContainers: [ContainerInfo]
     private let volumes: [CLIVolumeEntry]
@@ -19,12 +20,12 @@ public struct ResourceChartsView: View {
     }
 
     public var body: some View {
-        OverviewSectionCard(title: "Resource Usage", icon: "chart.bar.fill") {
+        MD3SectionCard("Resource Usage", icon: "chart.bar.fill") {
             if chartsVM.isLoading {
                 HStack {
                     Spacer()
-                    ProgressView("Fetching stats…").controlSize(.small)
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                    ProgressView("Fetching stats\u{2026}").controlSize(.small)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                     Spacer()
                 }
                 .padding(LassoSpacing.lg.rawValue)
@@ -34,17 +35,16 @@ public struct ResourceChartsView: View {
                     VStack(spacing: 6) {
                         Image(systemName: "chart.bar")
                             .font(.title2)
-                            .foregroundStyle(LassoColors.antTextDisabled)
-                        Text("No data — start a container to see resource usage.")
-                            .font(.caption)
-                            .foregroundStyle(LassoColors.antTextSecondary)
+                            .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
+                        Text("No data \u{2014} start a container to see resource usage.")
+                            .font(MD3Typography.bodySmall)
+                            .foregroundStyle(scheme.onSurfaceVariant)
                     }
                     Spacer()
                 }
                 .padding(LassoSpacing.lg.rawValue)
             } else {
                 VStack(spacing: 0) {
-                    // Memory + CPU side by side
                     if !chartsVM.memoryStats.isEmpty || !chartsVM.cpuStats.isEmpty {
                         HStack(alignment: .top, spacing: 0) {
                             if !chartsVM.memoryStats.isEmpty {
@@ -79,8 +79,8 @@ public struct ResourceChartsView: View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: LassoSpacing.sm.rawValue) {
                 Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                     .padding(.horizontal, LassoSpacing.md.rawValue)
                     .padding(.top, LassoSpacing.md.rawValue)
                 content()
@@ -101,26 +101,26 @@ public struct ResourceChartsView: View {
                 y: .value("Container", stat.name)
             )
             .foregroundStyle(
-                stat.percent > 0.85 ? LassoColors.antError :
-                stat.percent > 0.65 ? LassoColors.antWarning :
-                LassoColors.antBlue
+                stat.percent > 0.85 ? scheme.error :
+                stat.percent > 0.65 ? scheme.warning :
+                scheme.primary
             )
             .cornerRadius(4)
             .annotation(position: .trailing, alignment: .leading) {
                 Text(formatBytes(stat.usedBytes))
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelSmall.monospaced())
+                    .foregroundStyle(scheme.onSurfaceVariant)
             }
         }
         .chartXScale(domain: 0...100)
         .chartXAxis {
             AxisMarks(values: [0, 25, 50, 75, 100]) { value in
-                AxisGridLine().foregroundStyle(LassoColors.antBorder)
+                AxisGridLine().foregroundStyle(scheme.outlineVariant)
                 AxisValueLabel {
                     if let v = value.as(Double.self) {
                         Text("\(Int(v))%")
-                            .font(.caption2)
-                            .foregroundStyle(LassoColors.antTextDisabled)
+                            .font(MD3Typography.labelSmall)
+                            .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
                     }
                 }
             }
@@ -128,8 +128,8 @@ public struct ResourceChartsView: View {
         .chartYAxis {
             AxisMarks { _ in
                 AxisValueLabel()
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurface)
             }
         }
         .frame(height: CGFloat(max(60, chartsVM.memoryStats.count * 36)))
@@ -144,26 +144,26 @@ public struct ResourceChartsView: View {
                 y: .value("Container", stat.name)
             )
             .foregroundStyle(
-                stat.percent > 85 ? LassoColors.antError :
-                stat.percent > 60 ? LassoColors.antWarning :
-                LassoColors.antSuccess
+                stat.percent > 85 ? scheme.error :
+                stat.percent > 60 ? scheme.warning :
+                scheme.success
             )
             .cornerRadius(4)
             .annotation(position: .trailing, alignment: .leading) {
                 Text(String(format: "%.1f%%", stat.percent))
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelSmall.monospaced())
+                    .foregroundStyle(scheme.onSurfaceVariant)
             }
         }
         .chartXScale(domain: 0...100)
         .chartXAxis {
             AxisMarks(values: [0, 25, 50, 75, 100]) { value in
-                AxisGridLine().foregroundStyle(LassoColors.antBorder)
+                AxisGridLine().foregroundStyle(scheme.outlineVariant)
                 AxisValueLabel {
                     if let v = value.as(Double.self) {
                         Text("\(Int(v))%")
-                            .font(.caption2)
-                            .foregroundStyle(LassoColors.antTextDisabled)
+                            .font(MD3Typography.labelSmall)
+                            .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
                     }
                 }
             }
@@ -171,8 +171,8 @@ public struct ResourceChartsView: View {
         .chartYAxis {
             AxisMarks { _ in
                 AxisValueLabel()
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurface)
             }
         }
         .frame(height: CGFloat(max(60, chartsVM.cpuStats.count * 36)))
@@ -187,23 +187,23 @@ public struct ResourceChartsView: View {
                 x: .value("Size", stat.bytes),
                 y: .value("Volume", stat.name)
             )
-            .foregroundStyle(Color.orange)
+            .foregroundStyle(scheme.tertiary)
             .cornerRadius(4)
             .annotation(position: .trailing, alignment: .leading) {
                 Text(formatBytes(stat.bytes))
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelSmall.monospaced())
+                    .foregroundStyle(scheme.onSurfaceVariant)
             }
         }
         .chartXScale(domain: 0...Double(maxBytes) * 1.15)
         .chartXAxis {
             AxisMarks(values: .automatic(desiredCount: 4)) { value in
-                AxisGridLine().foregroundStyle(LassoColors.antBorder)
+                AxisGridLine().foregroundStyle(scheme.outlineVariant)
                 AxisValueLabel {
                     if let v = value.as(Double.self) {
                         Text(formatBytes(UInt64(v)))
-                            .font(.caption2)
-                            .foregroundStyle(LassoColors.antTextDisabled)
+                            .font(MD3Typography.labelSmall)
+                            .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
                     }
                 }
             }
@@ -211,8 +211,8 @@ public struct ResourceChartsView: View {
         .chartYAxis {
             AxisMarks { _ in
                 AxisValueLabel()
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurface)
             }
         }
         .frame(height: CGFloat(max(60, chartsVM.volumeStats.count * 36)))

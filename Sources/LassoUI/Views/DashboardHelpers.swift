@@ -18,7 +18,7 @@ enum SidebarItem: Hashable {
 // MARK: - Shared view helpers
 
 func relativeDate(_ date: Date?) -> String {
-    guard let date else { return "—" }
+    guard let date else { return "\u{2014}" }
     let seconds = Int(-date.timeIntervalSinceNow)
     if seconds < 60   { return "Just now" }
     if seconds < 3600 { return "\(seconds / 60)m ago" }
@@ -26,13 +26,13 @@ func relativeDate(_ date: Date?) -> String {
     return "\(seconds / 86400)d ago"
 }
 
-func stateColor(_ state: ContainerState) -> Color {
+func stateColor(_ state: ContainerState, scheme: MD3ColorScheme) -> Color {
     switch state {
-    case .running:                        LassoColors.antSuccess
-    case .stopped, .deleted:              LassoColors.antTextSecondary
-    case .error:                          LassoColors.antError
-    case .creating, .created, .starting:  LassoColors.antBlue
-    case .stopping, .deleting:            LassoColors.antWarning
+    case .running:                        scheme.success
+    case .stopped, .deleted:              scheme.onSurfaceVariant
+    case .error:                          scheme.error
+    case .creating, .created, .starting:  scheme.primary
+    case .stopping, .deleting:            scheme.warning
     }
 }
 
@@ -46,45 +46,31 @@ func formatBytes(_ bytes: UInt64) -> String {
     return "\(bytes) B"
 }
 
-func placeholderDetail(icon: String, title: String, subtitle: String = "") -> some View {
+func placeholderDetail(icon: String, title: String, subtitle: String = "", scheme: MD3ColorScheme) -> some View {
     VStack(spacing: LassoSpacing.md.rawValue) {
         Image(systemName: icon)
             .font(.system(size: 48))
-            .foregroundStyle(LassoColors.antTextDisabled)
+            .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
         Text(title)
-            .font(.title3.weight(.medium))
-            .foregroundStyle(LassoColors.antTextPrimary)
+            .font(MD3Typography.headlineSmall)
+            .foregroundStyle(scheme.onSurface)
         if !subtitle.isEmpty {
             Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .font(MD3Typography.bodyMedium)
+                .foregroundStyle(scheme.onSurfaceVariant)
         }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
 }
 
-func engineBadge(label: String) -> some View {
-    let isVZ = label.contains("VZ") || label.contains("Direct")
-    return HStack(spacing: 4) {
-        Image(systemName: isVZ ? "cpu" : "terminal")
-        Text(label)
-    }
-    .font(.caption.weight(.semibold))
-    .padding(.horizontal, 10)
-    .padding(.vertical, 4)
-    .background(LassoColors.antBlueBg)
-    .foregroundStyle(LassoColors.antBlue)
-    .clipShape(Capsule())
-}
-
-func actionButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {
+@MainActor func actionButton(icon: String, scheme: MD3ColorScheme, action: @escaping () -> Void) -> some View {
     Button(action: action) {
         Image(systemName: icon)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(color)
-            .frame(width: 26, height: 26)
-            .background(color.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .font(MD3Typography.labelMedium)
+            .foregroundStyle(scheme.onSecondaryContainer)
+            .frame(width: 28, height: 28)
+            .background(scheme.secondaryContainer)
+            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue, style: .continuous))
     }
     .buttonStyle(.plain)
     .pointerStyle(.link)

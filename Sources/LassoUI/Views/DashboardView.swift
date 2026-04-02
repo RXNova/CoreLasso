@@ -10,6 +10,7 @@ public struct DashboardView: View {
     @Bindable private var viewModel: DashboardViewModel
     private let engine: any LassoContainerEngine
 
+    @Environment(\.md3Scheme) private var scheme
     @State private var showCreateSheet = false
     @State private var selection: SidebarItem? = .overview
 
@@ -24,6 +25,7 @@ public struct DashboardView: View {
         } detail: {
             detail
         }
+        .md3Themed()
         .task {
             await viewModel.loadContainers()
         }
@@ -49,41 +51,48 @@ public struct DashboardView: View {
     private var sidebar: some View {
         List(selection: $selection) {
             Section {
+                HStack(spacing: 8) {
+                    Image(systemName: "cube.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(scheme.primary)
+                    Text("CoreLasso")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(scheme.onSurface)
+                }
+                .padding(.vertical, 4)
+                .listRowSeparator(.hidden)
+            }
+
+            Section {
                 navRow(item: .overview,   icon: "house.fill",              label: "Home")
                 containersNavRow
                 navRow(item: .images,     icon: "square.stack.3d.up.fill", label: "Images",
                        badge: viewModel.images.isEmpty ? nil : "\(viewModel.images.count)")
                 navRow(item: .volumes,    icon: "cylinder.split.1x2.fill", label: "Volumes")
                 navRow(item: .networking, icon: "network",                 label: "Networking")
-            }
-
-            Section {
-                navRow(item: .help,     icon: "questionmark.circle", label: "Help")
-                navRow(item: .settings, icon: "gearshape",           label: "Settings")
-            } header: {
-                Spacer().frame(height: 340)
+                navRow(item: .help,       icon: "questionmark.circle",     label: "Help")
+                navRow(item: .settings,   icon: "gearshape",              label: "Settings")
             }
         }
         .listStyle(.sidebar)
-        .tint(LassoColors.antBlue)
-        .searchable(text: $viewModel.searchText, prompt: "Search containers…")
-        .navigationTitle("Core Lasso")
+        .tint(scheme.primary)
+        .navigationTitle("")
         .navigationSplitViewColumnWidth(min: 220, ideal: 240)
     }
 
     private func navRow(item: SidebarItem, icon: String, label: String, badge: String? = nil,
-                        badgeBg: Color = LassoColors.antBlueBg, badgeFg: Color = LassoColors.antBlue) -> some View {
+                        badgeBg: Color? = nil, badgeFg: Color? = nil) -> some View {
         return Label {
             HStack {
                 Text(label)
                 Spacer()
                 if let badge {
                     Text(badge)
-                        .font(.caption2.monospacedDigit())
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(badgeBg)
-                        .foregroundStyle(badgeFg)
+                        .font(MD3Typography.labelSmall.monospacedDigit())
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(badgeBg ?? scheme.primaryContainer)
+                        .foregroundStyle(badgeFg ?? scheme.onPrimaryContainer)
                         .clipShape(Capsule())
                 }
             }
@@ -95,8 +104,6 @@ public struct DashboardView: View {
         .pointerStyle(.link)
     }
 
-    /// Specialised sidebar row for Containers — shows running count in green
-    /// when any containers are running, total in lavender otherwise.
     private var containersNavRow: some View {
         let running = viewModel.containers.filter { $0.state == .running }.count
         let total = viewModel.containers.count
@@ -106,19 +113,49 @@ public struct DashboardView: View {
             icon: "shippingbox.fill",
             label: "Containers",
             badge: badge,
-            badgeBg: running > 0 ? LassoColors.antSuccessBg : LassoColors.antBlueBg,
-            badgeFg: running > 0 ? LassoColors.antSuccess    : LassoColors.antBlue
+            badgeBg: running > 0 ? scheme.successContainer : scheme.primaryContainer,
+            badgeFg: running > 0 ? scheme.onSuccessContainer : scheme.onPrimaryContainer
         )
     }
 
     // MARK: - Detail routing
 
+    private var currentTitle: String {
+        switch selection {
+        case .overview, .none: "Overview"
+        case .containers:      "Containers"
+        case .container:       "Container Detail"
+        case .images:          "Images"
+        case .volumes:         "Volumes"
+        case .networking:      "Networks"
+        case .help:            "Help"
+        case .settings:        "Settings"
+        }
+    }
+
+    private var currentSubtitle: String {
+        switch selection {
+        case .overview, .none: "Container Runtime"
+        case .containers:      "\(viewModel.containers.count) total"
+        case .container:       ""
+        case .images:          "\(viewModel.images.count) local"
+        case .volumes:         "\(viewModel.volumes.count) volumes"
+        case .networking:      "\(viewModel.networks.count) networks"
+        case .help:            "Documentation"
+        case .settings:        "Preferences"
+        }
+    }
+
     @ViewBuilder
     private var detail: some View {
-        ZStack {
-            LassoColors.antPageBg.ignoresSafeArea()
+        VStack(spacing: 0) {
+            // App-level gradient header
+            appHeader
 
-            switch selection {
+            ZStack {
+                scheme.surfaceContainerLowest.ignoresSafeArea()
+
+                switch selection {
             case .overview, .none:
                 OverviewView(
                     viewModel: viewModel,
@@ -138,8 +175,8 @@ public struct DashboardView: View {
 
             case .containers:
                 if viewModel.isLoading {
-                    ProgressView("Loading containers…")
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                    ProgressView("Loading containers\u{2026}")
+                        .foregroundStyle(scheme.onSurfaceVariant)
                 } else {
                     ContainersView(
                         viewModel: viewModel,
@@ -161,7 +198,7 @@ public struct DashboardView: View {
                         }
                     )
                 } else {
-                    placeholderDetail(icon: "shippingbox", title: "Container not found")
+                    placeholderDetail(icon: "shippingbox", title: "Container not found", scheme: scheme)
                 }
 
             case .images:
@@ -178,8 +215,52 @@ public struct DashboardView: View {
 
             case .settings:
                 placeholderDetail(icon: "gearshape", title: "Settings",
-                                  subtitle: "App preferences coming soon.")
+                                  subtitle: "App preferences coming soon.", scheme: scheme)
             }
         }
+        }
+    }
+
+    // MARK: - App Header
+
+    private var appHeader: some View {
+        HStack(alignment: .center) {
+            HStack(spacing: 8) {
+                Text(currentTitle)
+                    .font(MD3Typography.titleMedium)
+                    .foregroundStyle(.white)
+                if !currentSubtitle.isEmpty {
+                    Text("\u{00B7} \(currentSubtitle)")
+                        .font(MD3Typography.bodySmall)
+                        .foregroundStyle(Color.white.opacity(0.55))
+                }
+            }
+            Spacer()
+            HStack(spacing: 6) {
+                let isVZ = viewModel.engineLabel.contains("VZ") || viewModel.engineLabel.contains("Direct")
+                Image(systemName: isVZ ? "cpu" : "terminal")
+                    .font(MD3Typography.labelSmall)
+                Text(viewModel.engineLabel)
+                    .font(MD3Typography.labelSmall)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.15))
+            .clipShape(Capsule())
+        }
+        .padding(.horizontal, LassoSpacing.lg.rawValue)
+        .padding(.vertical, 10)
+        .background(
+            LinearGradient(
+                colors: [
+                    scheme.primary.opacity(0.85),
+                    scheme.primary.opacity(0.65),
+                    scheme.tertiary.opacity(0.45)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
     }
 }

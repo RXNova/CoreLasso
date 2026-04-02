@@ -10,6 +10,8 @@ struct ContainersView: View {
     let onNewContainer: () -> Void
     let onSelectContainer: (String) -> Void
 
+    @Environment(\.md3Scheme) private var scheme
+
     private let portsWidth: CGFloat  = 160
     private let statusWidth: CGFloat  = 90
     private let startedWidth: CGFloat = 110
@@ -18,42 +20,35 @@ struct ContainersView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ── Toolbar ──────────────────────────────────────────────────
+            // Toolbar
             HStack(spacing: LassoSpacing.sm.rawValue) {
-                Text("Containers")
-                    .font(.title2.bold())
-                    .foregroundStyle(LassoColors.antTextPrimary)
                 Spacer()
-                engineBadge(label: viewModel.engineLabel)
                 Button {
                     Task { await viewModel.loadContainers() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.secondary))
+                .buttonStyle(MD3ButtonStyle(.tonal))
                 .disabled(viewModel.isLoading)
                 .help("Refresh")
                 Button {
                     Task { await viewModel.pruneContainers() }
                 } label: {
                     Image(systemName: "trash.slash")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.secondary))
+                .buttonStyle(MD3ButtonStyle(.tonal))
                 .help("Remove all stopped containers")
                 Button { onNewContainer() } label: {
                     Label("New", systemImage: "plus")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
             }
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.md.rawValue)
-            .background(LassoColors.arcToolbar)
+            .background(scheme.surface)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Column headers ───────────────────────────────────────────
+            // Column headers
             HStack {
                 Text("NAME").frame(maxWidth: .infinity, alignment: .leading)
                 Text("PORTS").frame(width: portsWidth, alignment: .leading)
@@ -61,15 +56,15 @@ struct ContainersView: View {
                 Text("STARTED").frame(width: startedWidth, alignment: .leading)
                 Spacer().frame(width: actionsWidth)
             }
-            .font(.caption.weight(.semibold))
+            .font(MD3Typography.labelSmall)
             .tracking(0.6)
-            .foregroundStyle(LassoColors.antTextSecondary)
+            .foregroundStyle(scheme.onSurfaceVariant)
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.sm.rawValue)
-            .background(LassoColors.arcTableHeader)
+            .background(scheme.surfaceContainerLow)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Rows ─────────────────────────────────────────────────────
+            // Rows
             if viewModel.filteredContainers.isEmpty {
                 emptyState
             } else {
@@ -81,11 +76,11 @@ struct ContainersView: View {
                         }
                     }
                 }
-                .background(LassoColors.antCardBg)
+                .background(scheme.surface)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(LassoColors.antPageBg)
+        .background(scheme.surfaceContainerLowest)
     }
 
     // MARK: - Row
@@ -96,24 +91,24 @@ struct ContainersView: View {
         return HStack {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Image(systemName: isBuildKit ? "applelogo" : "shippingbox.fill")
-                    .foregroundStyle(isBuildKit ? LassoColors.antTextPrimary : LassoColors.antBlue)
+                    .foregroundStyle(isBuildKit ? scheme.onSurface : scheme.primary)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 5) {
                         Text(container.spec.name)
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(LassoColors.antTextPrimary)
+                            .font(MD3Typography.bodyLarge)
+                            .foregroundStyle(scheme.onSurface)
                             .lineLimit(1)
                         if isBuildKit {
                             Text("Apple\u{00AE}\u{2019}s Image Builder")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(LassoColors.antTextSecondary)
+                                .font(MD3Typography.labelSmall)
+                                .foregroundStyle(scheme.onSurfaceVariant)
                                 .lineLimit(1)
                         }
                     }
                     Text(shortImageName(container.spec.image))
                         .font(.caption.monospaced())
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                         .lineLimit(1)
                 }
             }
@@ -128,14 +123,14 @@ struct ContainersView: View {
                 .frame(maxHeight: .infinity, alignment: .center)
 
             Text(relativeDate(container.createdAt))
-                .font(.body)
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .font(MD3Typography.bodyMedium)
+                .foregroundStyle(scheme.onSurfaceVariant)
                 .frame(width: startedWidth, alignment: .leading)
                 .frame(maxHeight: .infinity, alignment: .center)
 
             HStack(spacing: 4) {
                 if container.state == .stopped || container.state == .created {
-                    actionButton(icon: "play.fill", color: LassoColors.antSuccess) {
+                    actionButton(icon: "play.fill", scheme: scheme) {
                         Task {
                             do { try await engine.start(containerID: container.id) }
                             catch { viewModel.errorMessage = error.localizedDescription }
@@ -144,7 +139,7 @@ struct ContainersView: View {
                     }
                 }
                 if container.state == .running {
-                    actionButton(icon: "stop.fill", color: LassoColors.antWarning) {
+                    actionButton(icon: "stop.fill", scheme: scheme) {
                         Task {
                             do { try await engine.stop(containerID: container.id, timeout: .seconds(10)) }
                             catch { viewModel.errorMessage = error.localizedDescription }
@@ -152,10 +147,10 @@ struct ContainersView: View {
                         }
                     }
                 }
-                actionButton(icon: "arrow.up.right.square", color: LassoColors.antBlue) {
+                actionButton(icon: "arrow.up.right.square", scheme: scheme) {
                     onSelectContainer(container.id)
                 }
-                actionButton(icon: "trash", color: LassoColors.antError) {
+                actionButton(icon: "trash", scheme: scheme) {
                     Task {
                         do { try await engine.delete(containerID: container.id) }
                         catch { viewModel.errorMessage = error.localizedDescription }
@@ -168,7 +163,7 @@ struct ContainersView: View {
         }
         .padding(.horizontal, LassoSpacing.lg.rawValue)
         .padding(.vertical, LassoSpacing.sm.rawValue)
-        .background(isHovered ? LassoColors.antBlueBg : LassoColors.antCardBg)
+        .background(isHovered ? scheme.primary.opacity(0.08) : scheme.surface)
         .contentShape(Rectangle())
         .onHover { hoveredID = $0 ? container.id : nil }
         .onTapGesture { onSelectContainer(container.id) }
@@ -178,10 +173,7 @@ struct ContainersView: View {
 
     // MARK: - Helpers
 
-    /// Returns just the last path component + tag, e.g. "alpine:latest" from
-    /// "ghcr.io/linuxcontainers/alpine:latest"
     private func shortImageName(_ reference: String) -> String {
-        // Strip registry+namespace, keep "name:tag"
         let path = reference.split(separator: "/").last.map(String.init) ?? reference
         return path
     }
@@ -191,32 +183,32 @@ struct ContainersView: View {
     @ViewBuilder
     private func portCell(_ ports: [PortMapping]) -> some View {
         if ports.isEmpty {
-            Text("—")
-                .font(.body)
-                .foregroundStyle(LassoColors.antTextDisabled)
+            Text("\u{2014}")
+                .font(MD3Typography.bodyMedium)
+                .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
         } else {
             VStack(alignment: .leading, spacing: 3) {
                 ForEach(ports.prefix(2), id: \.hostPort) { p in
                     HStack(spacing: 4) {
                         Text(p.proto.uppercased())
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundStyle(p.proto.lowercased() == "udp" ? LassoColors.antWarning : LassoColors.antBlue)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
+                            .foregroundStyle(p.proto.lowercased() == "udp" ? scheme.warning : scheme.primary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
                             .background(
-                                (p.proto.lowercased() == "udp" ? LassoColors.antWarning : LassoColors.antBlue).opacity(0.1)
+                                (p.proto.lowercased() == "udp" ? scheme.warningContainer : scheme.primaryContainer)
                             )
-                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                            .clipShape(Capsule())
                         HStack(spacing: 3) {
                             Text(String(p.containerPort))
                                 .font(.system(size: 11, weight: .regular, design: .monospaced))
-                                .foregroundStyle(LassoColors.antTextSecondary)
+                                .foregroundStyle(scheme.onSurfaceVariant)
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 9, weight: .semibold))
-                                .foregroundStyle(LassoColors.antTextDisabled)
+                                .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
                             Text("localhost:\(String(p.hostPort))")
                                 .font(.system(size: 11, weight: .regular, design: .monospaced))
-                                .foregroundStyle(LassoColors.antBlue)
+                                .foregroundStyle(scheme.primary)
                                 .underline()
                                 .onTapGesture {
                                     if let url = URL(string: "http://localhost:\(p.hostPort)") {
@@ -229,8 +221,8 @@ struct ContainersView: View {
                 }
                 if ports.count > 2 {
                     Text("+\(ports.count - 2) more")
-                        .font(.caption2)
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .font(MD3Typography.labelSmall)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                 }
             }
         }
@@ -242,13 +234,13 @@ struct ContainersView: View {
         VStack(spacing: LassoSpacing.md.rawValue) {
             Image(systemName: "shippingbox")
                 .font(.system(size: 48))
-                .foregroundStyle(LassoColors.antTextDisabled)
+                .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
             Text("No containers")
-                .font(.title3.weight(.medium))
-                .foregroundStyle(LassoColors.antTextPrimary)
+                .font(MD3Typography.headlineSmall)
+                .foregroundStyle(scheme.onSurface)
             Text("Click \"New container\" to get started.")
-                .font(.subheadline)
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .font(MD3Typography.bodyMedium)
+                .foregroundStyle(scheme.onSurfaceVariant)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

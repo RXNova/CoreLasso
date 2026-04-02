@@ -5,6 +5,7 @@ import LassoData
 struct NetworkingView: View {
 
     @Bindable var viewModel: DashboardViewModel
+    @Environment(\.md3Scheme) private var scheme
 
     @State private var showCreateSheet = false
     @State private var newNetworkName = ""
@@ -12,35 +13,30 @@ struct NetworkingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ── Toolbar ──────────────────────────────────────────────────
+            // Toolbar
             HStack(spacing: LassoSpacing.sm.rawValue) {
-                Text("Networks")
-                    .font(.title2.bold())
-                    .foregroundStyle(LassoColors.antTextPrimary)
                 Spacer()
                 Button {
                     Task { await viewModel.pruneNetworks() }
                 } label: {
                     Label("Prune Unused", systemImage: "trash.slash")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.secondary))
+                .buttonStyle(MD3ButtonStyle(.tonal))
                 .help("Remove networks not in use by any container")
                 Button {
                     newNetworkName = ""
                     showCreateSheet = true
                 } label: {
                     Label("New", systemImage: "plus")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
             }
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.md.rawValue)
-            .background(LassoColors.arcToolbar)
+            .background(scheme.surface)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Column headers ───────────────────────────────────────────
+            // Column headers
             HStack {
                 Text("NAME").frame(maxWidth: .infinity, alignment: .leading)
                 Text("SUBNET (IPv4)").frame(width: 160, alignment: .leading)
@@ -48,19 +44,19 @@ struct NetworkingView: View {
                 Text("STATE").frame(width: 80, alignment: .leading)
                 Spacer().frame(width: 50)
             }
-            .font(.caption.weight(.semibold))
+            .font(MD3Typography.labelSmall)
             .tracking(0.6)
-            .foregroundStyle(LassoColors.antTextSecondary)
+            .foregroundStyle(scheme.onSurfaceVariant)
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.sm.rawValue)
-            .background(LassoColors.arcTableHeader)
+            .background(scheme.surfaceContainerLow)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Content ──────────────────────────────────────────────────
+            // Content
             if viewModel.networks.isEmpty {
                 Spacer()
                 placeholderDetail(icon: "network", title: "No networks",
-                                  subtitle: "Create a network to connect containers.")
+                                  subtitle: "Create a network to connect containers.", scheme: scheme)
                 Spacer()
             } else {
                 ScrollView {
@@ -71,11 +67,11 @@ struct NetworkingView: View {
                         }
                     }
                 }
-                .background(LassoColors.antCardBg)
+                .background(scheme.surface)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(LassoColors.antPageBg)
+        .background(scheme.surfaceContainerLowest)
         .sheet(isPresented: $showCreateSheet) { createSheet }
     }
 
@@ -85,43 +81,43 @@ struct NetworkingView: View {
         HStack {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Image(systemName: "network")
-                    .foregroundStyle(LassoColors.antBlue)
+                    .foregroundStyle(scheme.primary)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(net.id)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyLarge)
+                        .foregroundStyle(scheme.onSurface)
                         .lineLimit(1)
-                    Text(net.config?.mode ?? "—")
+                    Text(net.config?.mode ?? "\u{2014}")
                         .font(.caption.monospaced())
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                         .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(net.status?.ipv4Subnet ?? "—")
+            Text(net.status?.ipv4Subnet ?? "\u{2014}")
                 .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(net.status?.ipv4Subnet != nil ? LassoColors.antTextSecondary : LassoColors.antTextDisabled)
+                .foregroundStyle(net.status?.ipv4Subnet != nil ? scheme.onSurfaceVariant : scheme.onSurfaceVariant.opacity(0.5))
                 .frame(width: 160, alignment: .leading)
-            Text(net.status?.ipv6Subnet ?? "—")
+            Text(net.status?.ipv6Subnet ?? "\u{2014}")
                 .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(net.status?.ipv6Subnet != nil ? LassoColors.antTextSecondary : LassoColors.antTextDisabled)
+                .foregroundStyle(net.status?.ipv6Subnet != nil ? scheme.onSurfaceVariant : scheme.onSurfaceVariant.opacity(0.5))
                 .frame(width: 160, alignment: .leading)
             Group {
                 if let state = net.state {
                     Text(state)
-                        .font(.caption.weight(.medium))
-                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .font(MD3Typography.labelMedium)
+                        .padding(.horizontal, 12).padding(.vertical, 5)
                         .background(state == "active"
-                            ? LassoColors.antSuccess.opacity(0.1)
-                            : LassoColors.antTextSecondary.opacity(0.1))
-                        .foregroundStyle(state == "active" ? LassoColors.antSuccess : LassoColors.antTextSecondary)
+                            ? scheme.successContainer
+                            : scheme.surfaceContainerHighest)
+                        .foregroundStyle(state == "active" ? scheme.onSuccessContainer : scheme.onSurfaceVariant)
                         .clipShape(Capsule())
                 } else {
-                    Text("—")
-                        .font(.body)
-                        .foregroundStyle(LassoColors.antTextDisabled)
+                    Text("\u{2014}")
+                        .font(MD3Typography.bodyMedium)
+                        .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
                 }
             }
             .frame(width: 80, alignment: .leading)
@@ -129,11 +125,11 @@ struct NetworkingView: View {
                 Task { await viewModel.deleteNetwork(name: net.id) }
             } label: {
                 Image(systemName: "trash")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(LassoColors.antError)
+                    .font(MD3Typography.labelMedium)
+                    .foregroundStyle(scheme.error)
                     .frame(width: 26, height: 26)
-                    .background(LassoColors.antError.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .background(scheme.error.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue))
             }
             .buttonStyle(.plain)
             .pointerStyle(.link)
@@ -141,7 +137,7 @@ struct NetworkingView: View {
         }
         .padding(.horizontal, LassoSpacing.lg.rawValue)
         .padding(.vertical, LassoSpacing.sm.rawValue)
-        .background(hoveredNetID == net.id ? LassoColors.antBlueBg : LassoColors.antCardBg)
+        .background(hoveredNetID == net.id ? scheme.primary.opacity(0.08) : scheme.surface)
         .contentShape(Rectangle())
         .onHover { hoveredNetID = $0 ? net.id : nil }
         .animation(.easeOut(duration: 0.12), value: hoveredNetID == net.id)
@@ -152,12 +148,14 @@ struct NetworkingView: View {
 
     private var createSheet: some View {
         VStack(spacing: LassoSpacing.lg.rawValue) {
-            Text("Create Network").font(.title3.bold())
+            Text("Create Network")
+                .font(MD3Typography.titleLarge)
+                .foregroundStyle(scheme.onSurface)
             TextField("Network name", text: $newNetworkName)
                 .textFieldStyle(.roundedBorder)
             HStack {
                 Button("Cancel") { showCreateSheet = false }
-                    .buttonStyle(GlassButtonStyle(.secondary))
+                    .buttonStyle(MD3ButtonStyle(.outlined))
                 Spacer()
                 Button("Create") {
                     let name = newNetworkName.trimmingCharacters(in: .whitespaces)
@@ -165,7 +163,7 @@ struct NetworkingView: View {
                     showCreateSheet = false
                     Task { await viewModel.createNetwork(name: name) }
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
                 .disabled(newNetworkName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }

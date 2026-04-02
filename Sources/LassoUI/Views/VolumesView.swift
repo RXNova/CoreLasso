@@ -5,6 +5,7 @@ import LassoData
 struct VolumesView: View {
 
     @Bindable var viewModel: DashboardViewModel
+    @Environment(\.md3Scheme) private var scheme
 
     @State private var showCreateSheet = false
     @State private var newName = ""
@@ -14,35 +15,30 @@ struct VolumesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ── Toolbar ──────────────────────────────────────────────────
+            // Toolbar
             HStack(spacing: LassoSpacing.sm.rawValue) {
-                Text("Volumes")
-                    .font(.title2.bold())
-                    .foregroundStyle(LassoColors.antTextPrimary)
                 Spacer()
                 Button {
                     Task { await viewModel.pruneVolumes() }
                 } label: {
                     Label("Prune Unused", systemImage: "trash.slash")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.secondary))
+                .buttonStyle(MD3ButtonStyle(.tonal))
                 .help("Remove volumes not in use by any container")
                 Button {
                     newName = ""; newSize = ""; newLabelEntries = []
                     showCreateSheet = true
                 } label: {
                     Label("New", systemImage: "plus")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
             }
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.md.rawValue)
-            .background(LassoColors.arcToolbar)
+            .background(scheme.surface)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Column headers ───────────────────────────────────────────
+            // Column headers
             HStack {
                 Text("NAME").frame(maxWidth: .infinity, alignment: .leading)
                 Text("FORMAT").frame(width: 60, alignment: .leading)
@@ -51,19 +47,19 @@ struct VolumesView: View {
                 Text("LABELS").frame(width: 180, alignment: .leading)
                 Spacer().frame(width: 50)
             }
-            .font(.caption.weight(.semibold))
+            .font(MD3Typography.labelSmall)
             .tracking(0.6)
-            .foregroundStyle(LassoColors.antTextSecondary)
+            .foregroundStyle(scheme.onSurfaceVariant)
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.sm.rawValue)
-            .background(LassoColors.arcTableHeader)
+            .background(scheme.surfaceContainerLow)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Content ──────────────────────────────────────────────────
+            // Content
             if viewModel.volumes.isEmpty {
                 Spacer()
                 placeholderDetail(icon: "cylinder.split.1x2.fill", title: "No volumes",
-                                  subtitle: "Create a volume to persist container data.")
+                                  subtitle: "Create a volume to persist container data.", scheme: scheme)
                 Spacer()
             } else {
                 ScrollView {
@@ -74,11 +70,11 @@ struct VolumesView: View {
                         }
                     }
                 }
-                .background(LassoColors.antCardBg)
+                .background(scheme.surface)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(LassoColors.antPageBg)
+        .background(scheme.surfaceContainerLowest)
         .sheet(isPresented: $showCreateSheet) { createSheet }
     }
 
@@ -89,55 +85,55 @@ struct VolumesView: View {
         return HStack {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Image(systemName: "cylinder.split.1x2.fill")
-                    .foregroundStyle(LassoColors.antBlue)
+                    .foregroundStyle(scheme.primary)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(vol.name)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyLarge)
+                        .foregroundStyle(scheme.onSurface)
                         .lineLimit(1)
                     if let src = vol.source {
                         Text(src)
                             .font(.caption.monospaced())
-                            .foregroundStyle(LassoColors.antTextDisabled)
+                            .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
                             .lineLimit(1)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(vol.format ?? "—")
+            Text(vol.format ?? "\u{2014}")
                 .font(.caption.monospaced())
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .foregroundStyle(scheme.onSurfaceVariant)
                 .frame(width: 60, alignment: .leading)
 
-            Text(vol.formattedSize ?? "—")
-                .font(.body.monospaced())
-                .foregroundStyle(vol.formattedSize != nil ? LassoColors.antTextSecondary : LassoColors.antTextDisabled)
+            Text(vol.formattedSize ?? "\u{2014}")
+                .font(MD3Typography.bodyMedium.monospaced())
+                .foregroundStyle(vol.formattedSize != nil ? scheme.onSurfaceVariant : scheme.onSurfaceVariant.opacity(0.5))
                 .frame(width: 100, alignment: .trailing)
 
             if let date = vol.createdDate {
                 Text(relativeDate(date))
-                    .font(.body)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.bodyMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                     .frame(width: 110, alignment: .leading)
             } else {
-                Text("—")
-                    .font(.body)
-                    .foregroundStyle(LassoColors.antTextDisabled)
+                Text("\u{2014}")
+                    .font(MD3Typography.bodyMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
                     .frame(width: 110, alignment: .leading)
             }
 
             if let labels = vol.labels, !labels.isEmpty {
                 Text(labels.map { "\($0.key)=\($0.value)" }.joined(separator: ", "))
                     .font(.caption.monospaced())
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                     .lineLimit(1)
                     .frame(width: 180, alignment: .leading)
             } else {
-                Text("—")
-                    .font(.body)
-                    .foregroundStyle(LassoColors.antTextDisabled)
+                Text("\u{2014}")
+                    .font(MD3Typography.bodyMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
                     .frame(width: 180, alignment: .leading)
             }
 
@@ -145,11 +141,11 @@ struct VolumesView: View {
                 Task { await viewModel.deleteVolume(name: vol.name) }
             } label: {
                 Image(systemName: "trash")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(inUse ? LassoColors.antTextDisabled : LassoColors.antError)
+                    .font(MD3Typography.labelMedium)
+                    .foregroundStyle(inUse ? scheme.onSurfaceVariant.opacity(0.5) : scheme.error)
                     .frame(width: 26, height: 26)
-                    .background((inUse ? LassoColors.antTextDisabled : LassoColors.antError).opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .background((inUse ? scheme.onSurfaceVariant.opacity(0.5) : scheme.error).opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue))
             }
             .buttonStyle(.plain)
             .disabled(inUse)
@@ -159,7 +155,7 @@ struct VolumesView: View {
         }
         .padding(.horizontal, LassoSpacing.lg.rawValue)
         .padding(.vertical, LassoSpacing.sm.rawValue)
-        .background(hoveredVolName == vol.name ? LassoColors.antBlueBg : LassoColors.antCardBg)
+        .background(hoveredVolName == vol.name ? scheme.primary.opacity(0.08) : scheme.surface)
         .contentShape(Rectangle())
         .onHover { hoveredVolName = $0 ? vol.name : nil }
         .animation(.easeOut(duration: 0.12), value: hoveredVolName == vol.name)
@@ -168,43 +164,45 @@ struct VolumesView: View {
 
     private var createSheet: some View {
         VStack(spacing: LassoSpacing.lg.rawValue) {
-            Text("Create Volume").font(.title3.bold())
+            Text("Create Volume")
+                .font(MD3Typography.titleLarge)
+                .foregroundStyle(scheme.onSurface)
 
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
-                Text("Name").font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                Text("Name").font(MD3Typography.titleSmall)
+                    .foregroundStyle(scheme.onSurface)
                 TextField("my-volume", text: $newName)
                     .textFieldStyle(.roundedBorder)
             }
 
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
-                Text("Size (optional)").font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                Text("Size (optional)").font(MD3Typography.titleSmall)
+                    .foregroundStyle(scheme.onSurface)
                 TextField("e.g. 10G", text: $newSize)
                     .textFieldStyle(.roundedBorder)
                 Text("Supports K, M, G, T suffixes. Leave empty for default.")
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurfaceVariant)
             }
 
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
                 HStack {
-                    Text("Labels (optional)").font(.subheadline.weight(.medium))
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                    Text("Labels (optional)").font(MD3Typography.titleSmall)
+                        .foregroundStyle(scheme.onSurface)
                     Spacer()
                     Button {
                         newLabelEntries.append("")
                     } label: {
                         Label("Add", systemImage: "plus.circle")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(LassoColors.antBlue)
+                            .font(MD3Typography.labelMedium)
+                            .foregroundStyle(scheme.primary)
                     }
                     .buttonStyle(.plain)
                     .pointerStyle(.link)
                 }
                 if newLabelEntries.isEmpty {
-                    Text("No labels").font(.caption)
-                        .foregroundStyle(LassoColors.antTextDisabled)
+                    Text("No labels").font(MD3Typography.bodySmall)
+                        .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
                 } else {
                     ForEach(newLabelEntries.indices, id: \.self) { i in
                         HStack(spacing: LassoSpacing.xs.rawValue) {
@@ -215,7 +213,7 @@ struct VolumesView: View {
                                 newLabelEntries.remove(at: i)
                             } label: {
                                 Image(systemName: "minus.circle.fill")
-                                    .foregroundStyle(LassoColors.antError)
+                                    .foregroundStyle(scheme.error)
                             }
                             .buttonStyle(.plain)
                             .pointerStyle(.link)
@@ -226,7 +224,7 @@ struct VolumesView: View {
 
             HStack {
                 Button("Cancel") { showCreateSheet = false }
-                    .buttonStyle(GlassButtonStyle(.secondary))
+                    .buttonStyle(MD3ButtonStyle(.outlined))
                 Spacer()
                 Button("Create") {
                     let name = newName.trimmingCharacters(in: .whitespaces)
@@ -238,7 +236,7 @@ struct VolumesView: View {
                                                         size: size.isEmpty ? nil : size,
                                                         labels: labels) }
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
                 .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }

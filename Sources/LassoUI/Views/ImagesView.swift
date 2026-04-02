@@ -5,6 +5,7 @@ import LassoData
 struct ImagesView: View {
 
     @Bindable var viewModel: DashboardViewModel
+    @Environment(\.md3Scheme) private var scheme
 
     @State private var showPullSheet = false
     @State private var showBuildSheet = false
@@ -20,24 +21,21 @@ struct ImagesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ── Toolbar ──────────────────────────────────────────────────
+            // Toolbar
             HStack(spacing: LassoSpacing.sm.rawValue) {
-                Text("Images")
-                    .font(.title2.bold())
-                    .foregroundStyle(LassoColors.antTextPrimary)
                 Spacer()
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(LassoColors.antTextSecondary)
-                    TextField("Filter images…", text: $viewModel.imageSearchText)
+                        .font(MD3Typography.labelMedium)
+                        .foregroundStyle(scheme.onSurfaceVariant)
+                    TextField("Filter images\u{2026}", text: $viewModel.imageSearchText)
                         .textFieldStyle(.plain)
                         .frame(width: 180)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .background(LassoColors.arcFilterBar)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .background(scheme.surfaceContainerHigh)
+                .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue, style: .continuous))
                 Button {
                     buildContextPath = ""
                     buildTag = ""
@@ -45,25 +43,23 @@ struct ImagesView: View {
                     showBuildSheet = true
                 } label: {
                     Label("Build", systemImage: "hammer.circle")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.secondary))
+                .buttonStyle(MD3ButtonStyle(.tonal))
                 Button {
                     pullInput = ""
                     pullRegistry = .dockerHub
                     showPullSheet = true
                 } label: {
                     Label("Pull Image", systemImage: "arrow.down.circle")
-                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
             }
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.md.rawValue)
-            .background(LassoColors.arcToolbar)
+            .background(scheme.surface)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Column headers ───────────────────────────────────────────
+            // Column headers
             HStack {
                 Text("REFERENCE").frame(maxWidth: .infinity, alignment: .leading)
                 Text("TAG").frame(width: 120, alignment: .leading)
@@ -71,26 +67,26 @@ struct ImagesView: View {
                 Text("DIGEST").frame(width: 160, alignment: .leading)
                 Spacer().frame(width: 60)
             }
-            .font(.caption.weight(.semibold))
+            .font(MD3Typography.labelSmall)
             .tracking(0.6)
-            .foregroundStyle(LassoColors.antTextSecondary)
+            .foregroundStyle(scheme.onSurfaceVariant)
             .padding(.horizontal, LassoSpacing.lg.rawValue)
             .padding(.vertical, LassoSpacing.sm.rawValue)
-            .background(LassoColors.arcTableHeader)
+            .background(scheme.surfaceContainerLow)
             .overlay(alignment: .bottom) { Divider() }
 
-            // ── Content ──────────────────────────────────────────────────
+            // Content
             let hasPull = viewModel.pullingReference != nil
             let hasBuild = viewModel.buildingTag != nil
             if viewModel.images.isEmpty && !hasPull && !hasBuild {
                 Spacer()
                 placeholderDetail(icon: "square.stack.3d.up", title: "No local images",
-                                  subtitle: "Pull an image to get started.")
+                                  subtitle: "Pull an image to get started.", scheme: scheme)
                 Spacer()
             } else if viewModel.filteredImages.isEmpty && !hasPull && !hasBuild {
                 Spacer()
                 placeholderDetail(icon: "magnifyingglass", title: "No results",
-                                  subtitle: "No images match \"\(viewModel.imageSearchText)\"")
+                                  subtitle: "No images match \"\(viewModel.imageSearchText)\"", scheme: scheme)
                 Spacer()
             } else {
                 ScrollView {
@@ -109,11 +105,11 @@ struct ImagesView: View {
                         }
                     }
                 }
-                .background(LassoColors.antCardBg)
+                .background(scheme.surface)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(LassoColors.antPageBg)
+        .background(scheme.surfaceContainerLowest)
         .sheet(isPresented: $showPullSheet) { pullSheet }
         .sheet(isPresented: $showBuildSheet) { buildSheet }
         .confirmationDialog(
@@ -143,16 +139,16 @@ struct ImagesView: View {
         return HStack {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Image(systemName: "square.stack.3d.up.fill")
-                    .foregroundStyle(LassoColors.antBlue)
+                    .foregroundStyle(scheme.primary)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(image.name)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyLarge)
+                        .foregroundStyle(scheme.onSurface)
                         .lineLimit(1)
                     Text(image.reference)
                         .font(.caption.monospaced())
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                         .lineLimit(1)
                 }
             }
@@ -161,43 +157,43 @@ struct ImagesView: View {
             HStack(spacing: 4) {
                 Text(image.tag ?? "latest")
                     .font(.caption.monospaced())
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                 if inUse {
                     Text("IN USE")
-                        .font(.system(size: 9, weight: .bold))
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(LassoColors.antSuccess.opacity(0.12))
-                        .foregroundStyle(LassoColors.antSuccess)
+                        .font(MD3Typography.labelSmall)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(scheme.successContainer)
+                        .foregroundStyle(scheme.onSuccessContainer)
                         .clipShape(Capsule())
                 }
             }
             .frame(width: 120, alignment: .leading)
 
-            Text(image.size ?? "—")
-                .font(.body.monospaced())
-                .foregroundStyle(LassoColors.antTextSecondary)
+            Text(image.size ?? "\u{2014}")
+                .font(MD3Typography.bodyMedium.monospaced())
+                .foregroundStyle(scheme.onSurfaceVariant)
                 .frame(width: 80, alignment: .trailing)
 
             if let digest = image.digest {
-                Text(String(digest.prefix(20)) + "…")
+                Text(String(digest.prefix(20)) + "\u{2026}")
                     .font(.caption.monospaced())
-                    .foregroundStyle(LassoColors.antTextDisabled)
+                    .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
                     .frame(width: 160, alignment: .leading)
             } else {
-                Text("—")
-                    .font(.body)
-                    .foregroundStyle(LassoColors.antTextDisabled)
+                Text("\u{2014}")
+                    .font(MD3Typography.bodyMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
                     .frame(width: 160, alignment: .leading)
             }
 
             Button { deleteImagePending = image } label: {
                 Image(systemName: "trash")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(inUse ? LassoColors.antTextDisabled : LassoColors.antError)
+                    .font(MD3Typography.labelMedium)
+                    .foregroundStyle(inUse ? scheme.onSurfaceVariant.opacity(0.5) : scheme.error)
                     .frame(width: 26, height: 26)
-                    .background((inUse ? LassoColors.antTextDisabled : LassoColors.antError).opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .background((inUse ? scheme.onSurfaceVariant.opacity(0.5) : scheme.error).opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue))
             }
             .buttonStyle(.plain)
             .disabled(inUse)
@@ -207,7 +203,7 @@ struct ImagesView: View {
         }
         .padding(.horizontal, LassoSpacing.lg.rawValue)
         .padding(.vertical, 8)
-        .background(hoveredRef == image.reference ? LassoColors.antBlueBg : LassoColors.antCardBg)
+        .background(hoveredRef == image.reference ? scheme.primary.opacity(0.08) : scheme.surface)
         .contentShape(Rectangle())
         .onHover { hoveredRef = $0 ? image.reference : nil }
         .animation(.easeOut(duration: 0.12), value: hoveredRef == image.reference)
@@ -220,28 +216,28 @@ struct ImagesView: View {
         HStack {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Image(systemName: "hammer.fill")
-                    .foregroundStyle(LassoColors.antWarning.opacity(0.7))
+                    .foregroundStyle(scheme.warning.opacity(0.7))
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(tag.isEmpty ? "Unnamed image" : tag)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyLarge)
+                        .foregroundStyle(scheme.onSurface)
                         .lineLimit(1)
-                    Text("Building from Dockerfile…")
+                    Text("Building from Dockerfile\u{2026}")
                         .font(.caption.monospaced())
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                         .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 6) {
-                Text("Building…")
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                Text("Building\u{2026}")
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                 ProgressView()
                     .controlSize(.small)
-                    .tint(LassoColors.antWarning)
+                    .tint(scheme.warning)
             }
             .frame(width: 120, alignment: .trailing)
         }
@@ -255,28 +251,28 @@ struct ImagesView: View {
         HStack {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Image(systemName: "square.stack.3d.up.fill")
-                    .foregroundStyle(LassoColors.antBlue.opacity(0.45))
+                    .foregroundStyle(scheme.primary.opacity(0.45))
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(shortPullName(reference))
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyLarge)
+                        .foregroundStyle(scheme.onSurface)
                         .lineLimit(1)
                     Text(reference)
                         .font(.caption.monospaced())
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                         .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 6) {
-                Text("Pulling…")
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                Text("Pulling\u{2026}")
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                 ProgressView()
                     .controlSize(.small)
-                    .tint(LassoColors.antBlue)
+                    .tint(scheme.primary)
             }
             .frame(width: 120, alignment: .trailing)
         }
@@ -285,7 +281,6 @@ struct ImagesView: View {
     }
 
     private func shortPullName(_ reference: String) -> String {
-        // Strip registry prefix, e.g. "docker.io/library/ubuntu:22.04" → "ubuntu:22.04"
         let noScheme = reference.hasPrefix("https://") ? String(reference.dropFirst(8)) : reference
         let parts = noScheme.split(separator: "/")
         return parts.last.map(String.init) ?? reference
@@ -296,13 +291,12 @@ struct ImagesView: View {
     private var buildSheet: some View {
         VStack(alignment: .leading, spacing: LassoSpacing.lg.rawValue) {
             Text("Build Image")
-                .font(.title3.bold())
-                .foregroundStyle(LassoColors.antTextPrimary)
+                .font(MD3Typography.titleLarge)
+                .foregroundStyle(scheme.onSurface)
 
-            // Context directory
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
-                Text("Build Context").font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                Text("Build Context").font(MD3Typography.titleSmall)
+                    .foregroundStyle(scheme.onSurface)
                 HStack(spacing: LassoSpacing.sm.rawValue) {
                     TextField("/path/to/context", text: $buildContextPath)
                         .textFieldStyle(.roundedBorder)
@@ -323,19 +317,17 @@ struct ImagesView: View {
                         }
                     } label: {
                         Image(systemName: "folder")
-                            .font(.body.weight(.medium))
                     }
-                    .buttonStyle(GlassButtonStyle(.secondary))
+                    .buttonStyle(MD3ButtonStyle(.tonal))
                 }
                 Text("Directory containing your Dockerfile")
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurfaceVariant)
             }
 
-            // Dockerfile override
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
-                Text("Dockerfile (optional)").font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                Text("Dockerfile (optional)").font(MD3Typography.titleSmall)
+                    .foregroundStyle(scheme.onSurface)
                 HStack(spacing: LassoSpacing.sm.rawValue) {
                     TextField("Leave empty for <context>/Dockerfile", text: $buildDockerfilePath)
                         .textFieldStyle(.roundedBorder)
@@ -350,23 +342,21 @@ struct ImagesView: View {
                         }
                     } label: {
                         Image(systemName: "doc")
-                            .font(.body.weight(.medium))
                     }
-                    .buttonStyle(GlassButtonStyle(.secondary))
+                    .buttonStyle(MD3ButtonStyle(.tonal))
                 }
             }
 
-            // Tag
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
-                Text("Image Tag").font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                Text("Image Tag").font(MD3Typography.titleSmall)
+                    .foregroundStyle(scheme.onSurface)
                 TextField("myapp:latest", text: $buildTag)
                     .textFieldStyle(.roundedBorder)
             }
 
             HStack {
                 Button("Cancel") { showBuildSheet = false }
-                    .buttonStyle(GlassButtonStyle(.secondary))
+                    .buttonStyle(MD3ButtonStyle(.outlined))
                 Spacer()
                 Button("Build") {
                     let ctx = buildContextPath.trimmingCharacters(in: .whitespaces)
@@ -376,7 +366,7 @@ struct ImagesView: View {
                     showBuildSheet = false
                     Task { await viewModel.buildImage(contextPath: ctx, tag: tag, dockerfile: df) }
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
                 .disabled(buildContextPath.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -407,39 +397,30 @@ struct ImagesView: View {
     private var pullSheet: some View {
         VStack(alignment: .leading, spacing: LassoSpacing.lg.rawValue) {
             Text("Pull Image")
-                .font(.title3.bold())
-                .foregroundStyle(LassoColors.antTextPrimary)
+                .font(MD3Typography.titleLarge)
+                .foregroundStyle(scheme.onSurface)
 
             // Registry chips
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
-                Text("Registry").font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                Text("Registry").font(MD3Typography.titleSmall)
+                    .foregroundStyle(scheme.onSurface)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 130))], spacing: LassoSpacing.xs.rawValue) {
                     ForEach(PullRegistry.allCases) { reg in
-                        let selected = pullRegistry == reg
-                        Button { pullRegistry = reg } label: {
-                            HStack(spacing: 5) {
-                                Image(systemName: reg.icon).font(.caption.weight(.semibold))
-                                Text(reg.rawValue).font(.caption.weight(.semibold)).lineLimit(1)
-                            }
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .frame(maxWidth: .infinity)
-                            .background(selected ? LassoColors.antBlue.opacity(0.12) : LassoColors.arcToolbar)
-                            .foregroundStyle(selected ? LassoColors.antBlue : LassoColors.antTextSecondary)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                            .overlay(RoundedRectangle(cornerRadius: 6)
-                                .stroke(selected ? LassoColors.antBlue.opacity(0.5) : LassoColors.antBorder, lineWidth: 0.5))
+                        MD3FilterChip(
+                            reg.rawValue,
+                            icon: reg.icon,
+                            isSelected: pullRegistry == reg
+                        ) {
+                            pullRegistry = reg
                         }
-                        .buttonStyle(.plain)
-                        .pointerStyle(.link)
                     }
                 }
             }
 
             // Image input + search results
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
-                Text("Image").font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                Text("Image").font(MD3Typography.titleSmall)
+                    .foregroundStyle(scheme.onSurface)
                 TextField(pullRegistry.placeholder, text: $pullInput)
                     .textFieldStyle(.roundedBorder)
 
@@ -447,9 +428,9 @@ struct ImagesView: View {
                     if isSearching {
                         HStack(spacing: 6) {
                             ProgressView().controlSize(.mini)
-                            Text("Searching Docker Hub…")
-                                .font(.caption)
-                                .foregroundStyle(LassoColors.antTextSecondary)
+                            Text("Searching Docker Hub\u{2026}")
+                                .font(MD3Typography.bodySmall)
+                                .foregroundStyle(scheme.onSurfaceVariant)
                         }
                         .padding(.top, 2)
                     } else if !searchResults.isEmpty {
@@ -463,29 +444,29 @@ struct ImagesView: View {
                                         VStack(alignment: .leading, spacing: 2) {
                                             HStack(spacing: 4) {
                                                 Text(result.name)
-                                                    .font(.body.weight(.medium))
-                                                    .foregroundStyle(LassoColors.antTextPrimary)
+                                                    .font(MD3Typography.bodyLarge)
+                                                    .foregroundStyle(scheme.onSurface)
                                                 if result.isOfficial {
                                                     Text("OFFICIAL")
-                                                        .font(.system(size: 9, weight: .bold))
-                                                        .padding(.horizontal, 4).padding(.vertical, 1)
-                                                        .background(LassoColors.antBlue.opacity(0.1))
-                                                        .foregroundStyle(LassoColors.antBlue)
+                                                        .font(MD3Typography.labelSmall)
+                                                        .padding(.horizontal, 10).padding(.vertical, 4)
+                                                        .background(scheme.primaryContainer)
+                                                        .foregroundStyle(scheme.onPrimaryContainer)
                                                         .clipShape(Capsule())
                                                 }
                                             }
                                             if let desc = result.description, !desc.isEmpty {
                                                 Text(desc)
-                                                    .font(.caption)
-                                                    .foregroundStyle(LassoColors.antTextSecondary)
+                                                    .font(MD3Typography.bodySmall)
+                                                    .foregroundStyle(scheme.onSurfaceVariant)
                                                     .lineLimit(2)
                                             }
                                         }
                                         Spacer()
                                         if result.starCount > 0 {
                                             Label(formatStarCount(result.starCount), systemImage: "star.fill")
-                                                .font(.caption2)
-                                                .foregroundStyle(LassoColors.antTextDisabled)
+                                                .font(MD3Typography.labelSmall)
+                                                .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
                                         }
                                     }
                                     .padding(.horizontal, 10).padding(.vertical, 8)
@@ -493,24 +474,25 @@ struct ImagesView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .pointerStyle(.link)
-                                .background(Color.clear)
                                 if result.id != searchResults.last?.id {
                                     Divider().padding(.leading, 10)
                                 }
                             }
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(LassoColors.antBorder, lineWidth: 0.5))
+                        .background(scheme.surfaceContainerHigh)
+                        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue, style: .continuous)
+                            .stroke(scheme.outlineVariant, lineWidth: 0.5))
                     }
                 }
 
                 if !pullReference.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.right.circle.fill")
-                            .font(.caption).foregroundStyle(LassoColors.antBlue)
+                            .font(MD3Typography.bodySmall).foregroundStyle(scheme.primary)
                         Text(pullReference)
                             .font(.caption.monospaced())
-                            .foregroundStyle(LassoColors.antBlue)
+                            .foregroundStyle(scheme.primary)
                             .lineLimit(1)
                     }
                 }
@@ -518,14 +500,14 @@ struct ImagesView: View {
 
             HStack {
                 Button("Cancel") { showPullSheet = false }
-                    .buttonStyle(GlassButtonStyle(.secondary))
+                    .buttonStyle(MD3ButtonStyle(.outlined))
                 Spacer()
                 Button("Pull Image") {
                     let ref = pullReference
                     showPullSheet = false
                     Task { await viewModel.pullImage(reference: ref) }
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
                 .disabled(pullReference.isEmpty)
             }
         }

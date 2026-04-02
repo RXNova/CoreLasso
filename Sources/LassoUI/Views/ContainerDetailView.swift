@@ -1,10 +1,11 @@
 import SwiftUI
 import LassoCore
 
-/// Detail view for a single container — Ant Design style.
+/// Detail view for a single container — Material Design 3 style.
 public struct ContainerDetailView: View {
 
     @Bindable private var viewModel: ContainerDetailViewModel
+    @Environment(\.md3Scheme) private var scheme
     @State private var showEditSheet = false
     private let onRecreate: (() -> Void)?
 
@@ -18,7 +19,7 @@ public struct ContainerDetailView: View {
 
     public var body: some View {
         ScrollView {
-            VStack(spacing: LassoSpacing.md.rawValue) {
+            VStack(spacing: LassoSpacing.lg.rawValue) {
                 headerSection
                 statusSection
                 if viewModel.stats != nil || container.state == .running {
@@ -32,7 +33,7 @@ public struct ContainerDetailView: View {
             }
             .padding(LassoSpacing.lg.rawValue)
         }
-        .background(LassoColors.antPageBg)
+        .background(scheme.surfaceContainerLowest)
         .task {
             await viewModel.observeState()
         }
@@ -64,43 +65,43 @@ public struct ContainerDetailView: View {
     private var headerSection: some View {
         HStack(spacing: LassoSpacing.md.rawValue) {
             ZStack {
-                RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                    .fill(LassoColors.antBlueBg)
+                RoundedRectangle(cornerRadius: LassoRadius.md.rawValue, style: .continuous)
+                    .fill(scheme.primaryContainer)
                     .frame(width: 44, height: 44)
                 Image(systemName: "server.rack")
                     .font(.title3)
-                    .foregroundStyle(LassoColors.antBlue)
+                    .foregroundStyle(scheme.onPrimaryContainer)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(spec.name)
-                    .font(.title2.bold())
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .font(MD3Typography.headlineSmall)
+                    .foregroundStyle(scheme.onSurface)
                 Text(spec.image)
-                    .font(.subheadline)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.bodyMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant)
             }
             Spacer()
             StatusBadge(state: container.state)
             Divider().frame(height: 24).padding(.horizontal, 4)
-            // ── Action buttons ──────────────────────────────────────────
+            // Action buttons
             if container.state == .stopped || container.state == .created {
-                headerButton("play.fill", label: "Start", color: LassoColors.antSuccess) {
+                headerButton("play.fill", label: "Start", color: scheme.success) {
                     Task { await viewModel.start() }
                 }
             }
             if container.state == .running {
-                headerButton("stop.fill", label: "Stop", color: LassoColors.antWarning) {
+                headerButton("stop.fill", label: "Stop", color: scheme.warning) {
                     Task { await viewModel.stop() }
                 }
-                headerButton("xmark.octagon.fill", label: "Kill", color: LassoColors.antError) {
+                headerButton("xmark.octagon.fill", label: "Kill", color: scheme.error) {
                     Task { await viewModel.kill() }
                 }
             }
-            headerButton("pencil", label: "Edit", color: LassoColors.antBlue) {
+            headerButton("pencil", label: "Edit", color: scheme.primary) {
                 showEditSheet = true
             }
             if viewModel.canExport {
-                headerButton("square.and.arrow.up", label: "Export", color: LassoColors.antTextSecondary) {
+                headerButton("square.and.arrow.up", label: "Export", color: scheme.onSurfaceVariant) {
                     exportTag = "\(spec.name):exported"
                     showExportAlert = true
                 }
@@ -110,13 +111,7 @@ public struct ContainerDetailView: View {
             }
         }
         .padding(LassoSpacing.md.rawValue)
-        .background(LassoColors.antCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous)
-                .stroke(LassoColors.antBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.14), radius: 6, x: 0, y: 3)
+        .md3Card(.elevated)
         .alert("Export Container", isPresented: $showExportAlert) {
             TextField("Image tag", text: $exportTag)
             Button("Export") { Task { await viewModel.export(tag: exportTag.isEmpty ? nil : exportTag) } }
@@ -133,41 +128,41 @@ public struct ContainerDetailView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(color)
                 Text(label)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(MD3Typography.labelSmall)
                     .foregroundStyle(color.opacity(0.8))
             }
             .frame(width: 42, height: 36)
-            .background(color.opacity(0.07))
-            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .background(color.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue, style: .continuous))
         }
         .buttonStyle(.plain)
-            .disabled(viewModel.isPerformingAction)
-            .help(label)
-            .pointerStyle(.link)
+        .disabled(viewModel.isPerformingAction)
+        .help(label)
+        .pointerStyle(.link)
     }
 
     // MARK: - Status
 
     private var statusSection: some View {
-        sectionCard("Status") {
+        MD3SectionCard("Status") {
             infoRow("State") { StatusBadge(state: container.state) }
-            infoRow("Created") { Text(container.createdAt.map { formatDate($0) } ?? "—").font(.body).foregroundStyle(LassoColors.antTextPrimary) }
+            infoRow("Created") { Text(container.createdAt.map { formatDate($0) } ?? "\u{2014}").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface) }
             if let startedAt = container.startedAt {
-                infoRow("Started") { Text(formatDate(startedAt)).font(.body).foregroundStyle(LassoColors.antTextPrimary) }
+                infoRow("Started") { Text(formatDate(startedAt)).font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface) }
             }
             if let stoppedAt = container.stoppedAt {
-                infoRow("Stopped") { Text(formatDate(stoppedAt)).font(.body).foregroundStyle(LassoColors.antTextPrimary) }
+                infoRow("Stopped") { Text(formatDate(stoppedAt)).font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface) }
             }
             if let pid = container.pid {
-                infoRow("PID") { Text("\(pid)").font(.body.monospaced()).foregroundStyle(LassoColors.antTextPrimary) }
+                infoRow("PID") { Text("\(pid)").font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurface) }
             }
             if let errorMsg = container.errorMessage {
                 HStack(spacing: LassoSpacing.sm.rawValue) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(LassoColors.antError)
+                        .foregroundStyle(scheme.error)
                     Text(errorMsg)
-                        .font(.caption)
-                        .foregroundStyle(LassoColors.antError)
+                        .font(MD3Typography.bodySmall)
+                        .foregroundStyle(scheme.error)
                 }
                 .padding(.vertical, LassoSpacing.sm.rawValue)
             }
@@ -177,22 +172,22 @@ public struct ContainerDetailView: View {
     // MARK: - Resources
 
     private var resourcesSection: some View {
-        sectionCard("Resources") {
-            infoRow("CPU Cores") { Text("\(spec.resources.cpuCount)").font(.body).foregroundStyle(LassoColors.antTextPrimary) }
-            infoRow("Memory") { Text(formattedMemory(spec.resources.memorySize)).font(.body).foregroundStyle(LassoColors.antTextPrimary) }
+        MD3SectionCard("Resources") {
+            infoRow("CPU Cores") { Text("\(spec.resources.cpuCount)").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface) }
+            infoRow("Memory") { Text(formattedMemory(spec.resources.memorySize)).font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface) }
         }
     }
 
     // MARK: - Networking
 
     private var networkingSection: some View {
-        sectionCard("Networking") {
-            infoRow("Mode") { Text(spec.networking.mode.rawValue.uppercased()).font(.body).foregroundStyle(LassoColors.antTextPrimary) }
+        MD3SectionCard("Networking") {
+            infoRow("Mode") { Text(spec.networking.mode.rawValue.uppercased()).font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface) }
             if let bridge = spec.networking.bridgeInterface {
-                infoRow("Bridge Interface") { Text(bridge).font(.body.monospaced()).foregroundStyle(LassoColors.antTextPrimary) }
+                infoRow("Bridge Interface") { Text(bridge).font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurface) }
             }
             if let mac = spec.networking.macAddress {
-                infoRow("MAC Address") { Text(mac).font(.body.monospaced()).foregroundStyle(LassoColors.antTextPrimary) }
+                infoRow("MAC Address") { Text(mac).font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurface) }
             }
         }
     }
@@ -200,42 +195,42 @@ public struct ContainerDetailView: View {
     // MARK: - Storage
 
     private var storageSection: some View {
-        sectionCard("Storage") {
+        MD3SectionCard("Storage") {
             if spec.storage.isEmpty {
                 Text("No storage mounts configured.")
-                    .font(.body)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.bodyMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                     .padding(.vertical, LassoSpacing.sm.rawValue)
             } else {
                 ForEach(Array(spec.storage.enumerated()), id: \.offset) { index, mount in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(mount.imagePath)
-                                .font(.body.monospaced())
-                                .foregroundStyle(LassoColors.antTextPrimary)
+                                .font(MD3Typography.bodyMedium.monospaced())
+                                .foregroundStyle(scheme.onSurface)
                             if let dest = mount.containerPath {
-                                Text("→ \(dest)")
+                                Text("\u{2192} \(dest)")
                                     .font(.caption.monospaced())
-                                    .foregroundStyle(LassoColors.antTextSecondary)
+                                    .foregroundStyle(scheme.onSurfaceVariant)
                             }
                             HStack(spacing: LassoSpacing.sm.rawValue) {
                                 let resolvedSize = mount.size ?? viewModel.volumeSizes[mount.imagePath]
                                 if let size = resolvedSize {
                                     Text(formattedStorageSize(size))
-                                        .font(.caption)
-                                        .foregroundStyle(LassoColors.antTextSecondary)
+                                        .font(MD3Typography.bodySmall)
+                                        .foregroundStyle(scheme.onSurfaceVariant)
                                 }
                                 Text(mount.filesystem.rawValue.uppercased())
-                                    .font(.caption)
-                                    .foregroundStyle(LassoColors.antTextSecondary)
+                                    .font(MD3Typography.bodySmall)
+                                    .foregroundStyle(scheme.onSurfaceVariant)
                                 if mount.readOnly {
                                     Text("READ-ONLY")
-                                        .font(.caption2.weight(.semibold))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(LassoColors.antWarningBg)
-                                        .foregroundStyle(LassoColors.antWarning)
-                                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                                        .font(MD3Typography.labelSmall)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(scheme.warningContainer)
+                                        .foregroundStyle(scheme.onWarningContainer)
+                                        .clipShape(Capsule())
                                 }
                             }
                         }
@@ -253,12 +248,12 @@ public struct ContainerDetailView: View {
     // MARK: - Stats
 
     private var statsSection: some View {
-        sectionCard("Resource Usage") {
+        MD3SectionCard("Resource Usage") {
             let s = viewModel.stats
             infoRow("CPU Time") {
                 if let usec = s?.cpuUsageUsec {
                     Text(formatMicroseconds(usec))
-                        .font(.body.monospaced()).foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurface)
                 } else { statPlaceholder() }
             }
             infoRow("Memory") {
@@ -266,26 +261,26 @@ public struct ContainerDetailView: View {
                     let pct = limit > 0 ? Double(used) / Double(limit) : 0
                     HStack(spacing: 8) {
                         Text("\(formatBytes(used)) / \(formatBytes(limit))")
-                            .font(.body.monospaced()).foregroundStyle(LassoColors.antTextPrimary)
+                            .font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurface)
                         ProgressView(value: pct).frame(width: 80)
                     }
                 } else { statPlaceholder() }
             }
             infoRow("Network I/O") {
                 if let rx = s?.networkRxBytes, let tx = s?.networkTxBytes {
-                    Text("↓ \(formatBytes(rx))  ↑ \(formatBytes(tx))")
-                        .font(.body.monospaced()).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("\u{2193} \(formatBytes(rx))  \u{2191} \(formatBytes(tx))")
+                        .font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurface)
                 } else { statPlaceholder() }
             }
             infoRow("Block I/O") {
                 if let r = s?.blockReadBytes, let w = s?.blockWriteBytes {
                     Text("R \(formatBytes(r))  W \(formatBytes(w))")
-                        .font(.body.monospaced()).foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurface)
                 } else { statPlaceholder() }
             }
             infoRow("Processes") {
                 if let procs = s?.numProcesses {
-                    Text("\(procs)").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("\(procs)").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                 } else { statPlaceholder() }
             }
         }
@@ -295,18 +290,18 @@ public struct ContainerDetailView: View {
     private func statPlaceholder() -> some View {
         HStack(spacing: 6) {
             ProgressView().controlSize(.mini)
-            Text("—").font(.body.monospaced()).foregroundStyle(LassoColors.antTextDisabled)
+            Text("\u{2014}").font(MD3Typography.bodyMedium.monospaced()).foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
         }
     }
 
     // MARK: - Environment
 
     private var environmentSection: some View {
-        sectionCard("Environment Variables") {
+        MD3SectionCard("Environment Variables") {
             ForEach(spec.environment, id: \.self) { env in
                 Text(env)
                     .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .foregroundStyle(scheme.onSurface)
                     .padding(.vertical, 2)
             }
         }
@@ -315,25 +310,25 @@ public struct ContainerDetailView: View {
     // MARK: - Options
 
     private var optionsSection: some View {
-        sectionCard("Options") {
+        MD3SectionCard("Options") {
             if spec.rosetta {
                 infoRow("Rosetta") {
-                    Text("Enabled").font(.body).foregroundStyle(LassoColors.antSuccess)
+                    Text("Enabled").font(MD3Typography.bodyMedium).foregroundStyle(scheme.success)
                 }
             }
             if spec.sshForwarding {
                 infoRow("SSH Forwarding") {
-                    Text("Enabled").font(.body).foregroundStyle(LassoColors.antSuccess)
+                    Text("Enabled").font(MD3Typography.bodyMedium).foregroundStyle(scheme.success)
                 }
             }
             if spec.tty {
                 infoRow("TTY") {
-                    Text("Allocated").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("Allocated").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                 }
             }
             if spec.interactive {
                 infoRow("Interactive") {
-                    Text("stdin open").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("stdin open").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                 }
             }
         }
@@ -341,46 +336,20 @@ public struct ContainerDetailView: View {
 
     // MARK: - Components
 
-    private func sectionCard<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(LassoColors.antTextPrimary)
-                Spacer()
-            }
-            .padding(.horizontal, LassoSpacing.md.rawValue)
-            .padding(.vertical, LassoSpacing.sm.rawValue)
-            .background(LassoColors.arcTableHeader)
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 0) {
-                content()
-            }
-            .padding(.horizontal, LassoSpacing.md.rawValue)
-        }
-        .background(LassoColors.antCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous)
-                .stroke(LassoColors.antBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
-    }
-
     private func infoRow<Content: View>(_ label: String, @ViewBuilder value: () -> Content) -> some View {
         HStack(alignment: .center) {
             Text(label)
-                .font(.body)
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .font(MD3Typography.bodyMedium)
+                .foregroundStyle(scheme.onSurfaceVariant)
                 .frame(width: 130, alignment: .leading)
             value()
             Spacer()
         }
-        .padding(.vertical, LassoSpacing.sm.rawValue)
+        .padding(.vertical, 10)
         .overlay(alignment: .bottom) {
-            Divider()
+            Rectangle()
+                .fill(scheme.outlineVariant.opacity(0.2))
+                .frame(height: 0.5)
         }
     }
 

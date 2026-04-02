@@ -1,9 +1,10 @@
 import SwiftUI
 import LassoCore
 
-/// An Ant Design-style tag badge displaying a container's power profile.
+/// An MD3-style badge displaying a container's power profile.
 public struct PowerProfileIndicator: View {
 
+    @Environment(\.md3Scheme) private var scheme
     private let profile: LassoPowerProfile
 
     public init(profile: LassoPowerProfile) {
@@ -13,36 +14,34 @@ public struct PowerProfileIndicator: View {
     public var body: some View {
         HStack(spacing: 4) {
             Image(systemName: profile.symbolName)
-                .font(.caption2)
+                .font(MD3Typography.labelSmall)
             Text(profile.displayName)
-                .font(.caption2.weight(.medium))
+                .font(MD3Typography.labelSmall)
         }
         .foregroundStyle(badgeColor)
-        .padding(.horizontal, LassoSpacing.sm.rawValue)
-        .padding(.vertical, 3)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(badgeBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .clipShape(Capsule())
         .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(badgeColor.opacity(0.3), lineWidth: 0.5)
+            Capsule()
+                .stroke(badgeColor.opacity(0.2), lineWidth: 0.5)
         )
     }
 
-    // MARK: - Helpers
-
     private var badgeColor: Color {
         switch profile {
-        case .utility:     LassoColors.antSuccess
-        case .balanced:    LassoColors.antBlue
-        case .performance: LassoColors.antWarning
+        case .utility:     scheme.success
+        case .balanced:    scheme.primary
+        case .performance: scheme.warning
         }
     }
 
     private var badgeBackground: Color {
         switch profile {
-        case .utility:     LassoColors.antSuccessBg
-        case .balanced:    LassoColors.antBlueBg
-        case .performance: LassoColors.antWarningBg
+        case .utility:     scheme.successContainer
+        case .balanced:    scheme.primaryContainer
+        case .performance: scheme.warningContainer
         }
     }
 }

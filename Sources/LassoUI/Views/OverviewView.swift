@@ -13,7 +13,6 @@ public enum OverviewDestination {
 // MARK: - Overview View
 
 /// Landing tab — shown by default when the app opens.
-/// Displays at-a-glance summary cards, live container lists, and quick actions.
 public struct OverviewView: View {
 
     let viewModel: DashboardViewModel
@@ -22,6 +21,8 @@ public struct OverviewView: View {
     let onPullImage: () -> Void
     let onSelectContainer: (String) -> Void
     let onNavigate: (OverviewDestination) -> Void
+
+    @Environment(\.md3Scheme) private var scheme
 
     // MARK: - Derived state
 
@@ -40,7 +41,6 @@ public struct OverviewView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LassoSpacing.lg.rawValue) {
-                header
                 statCards
 
                 if !errored.isEmpty {
@@ -62,164 +62,230 @@ public struct OverviewView: View {
             }
             .padding(LassoSpacing.lg.rawValue)
         }
-        .background(LassoColors.antPageBg.ignoresSafeArea())
+        .background(scheme.surfaceContainerLowest.ignoresSafeArea())
     }
 
-    // MARK: - Header
+    // MARK: - Stat Card
 
-    private var header: some View {
-        HStack(alignment: .center, spacing: LassoSpacing.sm.rawValue) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Overview")
-                    .font(.title2.bold())
-                    .foregroundStyle(LassoColors.antTextPrimary)
-                Text("Container Runtime")
-                    .font(.subheadline)
-                    .foregroundStyle(LassoColors.antTextSecondary)
-            }
-            Spacer()
-            engineBadge
-        }
-    }
+    private var totalContainers: Int { viewModel.containers.count }
 
-    private var engineBadge: some View {
-        let isVZ = viewModel.engineLabel.contains("VZ") || viewModel.engineLabel.contains("Direct")
-        return HStack(spacing: 4) {
-            Image(systemName: isVZ ? "cpu" : "terminal")
-            Text(viewModel.engineLabel)
-        }
-        .font(.caption.weight(.semibold))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(LassoColors.antBlueBg)
-        .foregroundStyle(LassoColors.antBlue)
-        .clipShape(Capsule())
-    }
-
-    // MARK: - Stat Cards
+    private let cardShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
 
     private var statCards: some View {
-        HStack(spacing: 0) {
-            statItem(
-                icon: "play.circle.fill",
-                label: "Running",
-                value: running.count,
-                color: LassoColors.antSuccess
-            ) { onNavigate(.containers) }
+        VStack(alignment: .leading, spacing: 0) {
 
-            statDivider
+            // ── Top: gradient hero with running count ────────────────────
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        scheme.primary,
+                        scheme.primary.opacity(0.75),
+                        scheme.tertiary.opacity(0.6)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
 
-            statItem(
-                icon: "stop.circle.fill",
-                label: "Stopped",
-                value: stopped.count,
-                color: LassoColors.antTextSecondary
-            ) { onNavigate(.containers) }
+                // Decorative circles
+                Circle()
+                    .fill(Color.white.opacity(0.06))
+                    .frame(width: 180, height: 180)
+                    .offset(x: -40, y: 50)
+                Circle()
+                    .fill(Color.white.opacity(0.04))
+                    .frame(width: 120, height: 120)
+                    .offset(x: 280, y: -30)
 
-            statDivider
+                // Content
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Containers")
+                            .font(MD3Typography.labelLarge)
+                            .foregroundStyle(Color.white.opacity(0.7))
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text("\(running.count)")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .contentTransition(.numericText())
+                            Text("running")
+                                .font(MD3Typography.titleMedium)
+                                .foregroundStyle(Color.white.opacity(0.7))
+                        }
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 6) {
+                        miniStat("\(totalContainers)", label: "total", icon: "shippingbox.fill")
+                        miniStat("\(stopped.count)", label: "stopped", icon: "stop.circle")
+                        if !errored.isEmpty {
+                            miniStat("\(errored.count)", label: "error", icon: "exclamationmark.triangle.fill")
+                        }
+                    }
+                }
+                .padding(LassoSpacing.lg.rawValue)
+            }
+            .frame(height: 130)
+            .onTapGesture { onNavigate(.containers) }
+            .pointerStyle(.link)
 
-            statItem(
-                icon: "exclamationmark.triangle.fill",
-                label: "Error",
-                value: errored.count,
-                color: LassoColors.antError
-            ) { onNavigate(.containers) }
+            // ── White bottom half ───────────────────────────────────────
+            VStack(spacing: 0) {
+                // State bar
+                if totalContainers > 0 {
+                    stateBar
+                        .padding(.horizontal, LassoSpacing.lg.rawValue)
+                        .padding(.top, LassoSpacing.md.rawValue)
+                        .padding(.bottom, LassoSpacing.sm.rawValue)
+                }
 
-            statDivider
+                // Resource counters
+                HStack(spacing: 0) {
+                    resourceCounter(
+                        icon: "square.stack.3d.up.fill",
+                        value: viewModel.images.count,
+                        label: "Images",
+                        color: scheme.primary,
+                        containerColor: scheme.primaryContainer
+                    ) { onNavigate(.images) }
 
-            statItem(
-                icon: "square.stack.3d.up.fill",
-                label: "Images",
-                value: viewModel.images.count,
-                color: LassoColors.antBlue
-            ) { onNavigate(.images) }
+                    resourceDivider
 
-            statDivider
+                    resourceCounter(
+                        icon: "network",
+                        value: viewModel.networks.count,
+                        label: "Networks",
+                        color: scheme.tertiary,
+                        containerColor: scheme.tertiaryContainer
+                    ) { onNavigate(.networking) }
 
-            statItem(
-                icon: "network",
-                label: "Networks",
-                value: viewModel.networks.count,
-                color: Color(hue: 0.75, saturation: 0.5, brightness: 0.75)
-            ) { onNavigate(.networking) }
+                    resourceDivider
 
-            statDivider
-
-            statItem(
-                icon: "cylinder.split.1x2.fill",
-                label: "Volumes",
-                value: viewModel.volumes.count,
-                color: Color.orange
-            ) { onNavigate(.volumes) }
+                    resourceCounter(
+                        icon: "cylinder.split.1x2.fill",
+                        value: viewModel.volumes.count,
+                        label: "Volumes",
+                        color: scheme.warning,
+                        containerColor: scheme.warningContainer
+                    ) { onNavigate(.volumes) }
+                }
+                .padding(.horizontal, LassoSpacing.sm.rawValue)
+                .padding(.bottom, LassoSpacing.md.rawValue)
+                .padding(.top, totalContainers > 0 ? 0 : LassoSpacing.md.rawValue)
+            }
+            .background(scheme.surface)
         }
-        .padding(.vertical, LassoSpacing.md.rawValue)
-        .background(LassoColors.antCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue))
-        .overlay(
-            RoundedRectangle(cornerRadius: LassoRadius.md.rawValue)
-                .stroke(LassoColors.antBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
+        .clipShape(cardShape)
+        .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
     }
 
-    private func statItem(
+    // MARK: - Stat Card Subviews
+
+    private func miniStat(_ value: String, label: String, icon: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+            Text(value)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+            Text(label)
+                .font(.system(size: 11))
+        }
+        .foregroundStyle(Color.white.opacity(0.8))
+    }
+
+    private var stateBar: some View {
+        GeometryReader { geo in
+            let total = max(totalContainers, 1)
+            let runW = geo.size.width * CGFloat(running.count) / CGFloat(total)
+            let stopW = geo.size.width * CGFloat(stopped.count) / CGFloat(total)
+            let errW = geo.size.width * CGFloat(errored.count) / CGFloat(total)
+            let otherW = geo.size.width - runW - stopW - errW
+
+            HStack(spacing: 2) {
+                if running.count > 0 {
+                    Capsule().fill(scheme.success)
+                        .frame(width: max(runW, 4))
+                }
+                if stopped.count > 0 {
+                    Capsule().fill(scheme.onSurfaceVariant.opacity(0.35))
+                        .frame(width: max(stopW, 4))
+                }
+                if errored.count > 0 {
+                    Capsule().fill(scheme.error)
+                        .frame(width: max(errW, 4))
+                }
+                if otherW > 1 {
+                    Capsule().fill(scheme.primary.opacity(0.25))
+                        .frame(width: max(otherW, 4))
+                }
+            }
+        }
+        .frame(height: 6)
+    }
+
+    private func resourceCounter(
         icon: String,
-        label: String,
         value: Int,
+        label: String,
         color: Color,
+        containerColor: Color,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(color)
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(containerColor)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(color)
+                }
                 Text("\(value)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(scheme.onSurface)
                     .contentTransition(.numericText())
                 Text(label)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelSmall)
+                    .foregroundStyle(scheme.onSurfaceVariant)
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, LassoSpacing.sm.rawValue)
         }
         .buttonStyle(.plain)
         .pointerStyle(.link)
     }
 
-    private var statDivider: some View {
-        Divider()
-            .frame(height: 48)
-            .padding(.horizontal, 2)
+    private var resourceDivider: some View {
+        Rectangle()
+            .fill(scheme.outlineVariant.opacity(0.25))
+            .frame(width: 0.5, height: 44)
     }
 
     // MARK: - Container sections
 
     private var errorSection: some View {
-        OverviewSectionCard(
-            title: "Needs Attention",
+        MD3SectionCard(
+            "Needs Attention",
             icon: "exclamationmark.triangle.fill",
-            titleColor: LassoColors.antError
+            titleColor: scheme.error
         ) {
             containerRows(errored)
         }
     }
 
     private var stoppedSection: some View {
-        OverviewSectionCard(
-            title: "Stopped",
+        MD3SectionCard(
+            "Stopped",
             icon: "stop.circle",
-            titleColor: LassoColors.antTextSecondary
+            titleColor: scheme.onSurfaceVariant
         ) {
             containerRows(Array(stopped.prefix(3)))
             if stopped.count > 3 {
                 Button {
                     onNavigate(.containers)
                 } label: {
-                    Text("View all \(stopped.count) stopped containers →")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(LassoColors.antBlue)
+                    Text("View all \(stopped.count) stopped containers \u{2192}")
+                        .font(MD3Typography.labelMedium)
+                        .foregroundStyle(scheme.primary)
                 }
                 .buttonStyle(.plain)
                 .pointerStyle(.link)
@@ -243,23 +309,23 @@ public struct OverviewView: View {
     private func containerRow(_ container: ContainerInfo) -> some View {
         HStack(spacing: LassoSpacing.sm.rawValue) {
             Circle()
-                .fill(stateColor(container.state))
+                .fill(stateColor(container.state, scheme: scheme))
                 .frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {
                 Text(container.spec.name)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .font(MD3Typography.bodyLarge)
+                    .foregroundStyle(scheme.onSurface)
                     .lineLimit(1)
                 Text(container.spec.image)
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                     .lineLimit(1)
             }
             Spacer()
             if let first = container.spec.networking.portMappings.first {
                 Text(":\(first.hostPort)")
                     .font(.caption.monospaced())
-                    .foregroundStyle(LassoColors.antTextDisabled)
+                    .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
             }
             StatusBadge(state: container.state)
         }
@@ -275,89 +341,23 @@ public struct OverviewView: View {
         VStack(spacing: LassoSpacing.md.rawValue) {
             Image(systemName: "shippingbox")
                 .font(.system(size: 48))
-                .foregroundStyle(LassoColors.antTextDisabled)
+                .foregroundStyle(scheme.onSurfaceVariant.opacity(0.5))
             Text("No containers yet")
-                .font(.title3.weight(.medium))
-                .foregroundStyle(LassoColors.antTextPrimary)
+                .font(MD3Typography.headlineSmall)
+                .foregroundStyle(scheme.onSurface)
             Text("Create your first container to get started.")
-                .font(.subheadline)
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .font(MD3Typography.bodyMedium)
+                .foregroundStyle(scheme.onSurfaceVariant)
             Button {
                 onNewContainer()
             } label: {
                 Label("New Container", systemImage: "plus")
-                    .font(.subheadline.weight(.medium))
             }
-            .buttonStyle(GlassButtonStyle(.primary))
+            .buttonStyle(MD3ButtonStyle(.filled))
             .padding(.top, LassoSpacing.xs.rawValue)
         }
         .frame(maxWidth: .infinity)
         .padding(LassoSpacing.xl.rawValue)
-        .background(LassoColors.antCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue))
-        .overlay(
-            RoundedRectangle(cornerRadius: LassoRadius.md.rawValue)
-                .stroke(LassoColors.antBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
-        .overlay(
-            RoundedRectangle(cornerRadius: LassoRadius.md.rawValue)
-                .stroke(LassoColors.antBorder, lineWidth: 0.5)
-        )
-    }
-
-    // MARK: - Helpers
-
-    private func stateColor(_ state: ContainerState) -> Color {
-        switch state {
-        case .running:                        LassoColors.antSuccess
-        case .stopped, .deleted:              LassoColors.antTextSecondary
-        case .error:                          LassoColors.antError
-        case .creating, .created, .starting:  LassoColors.antBlue
-        case .stopping, .deleting:            LassoColors.antWarning
-        }
-    }
-}
-
-// MARK: - Section Card
-
-struct OverviewSectionCard<Content: View>: View {
-    let title: String
-    var icon: String? = nil
-    var titleColor: Color = LassoColors.antTextPrimary
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack(spacing: LassoSpacing.xs.rawValue) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(titleColor)
-                }
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(titleColor)
-            }
-            .padding(.horizontal, LassoSpacing.md.rawValue)
-            .padding(.vertical, LassoSpacing.sm.rawValue)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(LassoColors.arcTableHeader)
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 0) {
-                content()
-            }
-            .padding(.horizontal, LassoSpacing.md.rawValue)
-        }
-        .background(LassoColors.antCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue))
-        .overlay(
-            RoundedRectangle(cornerRadius: LassoRadius.md.rawValue)
-                .stroke(LassoColors.antBorder, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
+        .md3Card(.outlined)
     }
 }

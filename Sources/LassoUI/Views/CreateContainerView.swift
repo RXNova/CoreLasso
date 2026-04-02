@@ -2,10 +2,11 @@ import SwiftUI
 import AppKit
 import LassoCore
 
-/// Sheet form for creating a new container — Ant Design style.
+/// Sheet form for creating a new container — Material Design 3 style.
 public struct CreateContainerView: View {
 
     @Bindable private var viewModel: CreateContainerViewModel
+    @Environment(\.md3Scheme) private var scheme
     private let onDismiss: () -> Void
 
     @State private var showImageSuggestions = false
@@ -26,20 +27,20 @@ public struct CreateContainerView: View {
             // Title bar
             HStack {
                 Text(viewModel.isEditMode ? "Edit Container" : "Create Container")
-                    .font(.title3.bold())
-                    .foregroundStyle(LassoColors.antTextPrimary)
+                    .font(MD3Typography.titleLarge)
+                    .foregroundStyle(scheme.onSurface)
                 Spacer()
                 Button {
                     onDismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .font(MD3Typography.bodyLarge)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                 }
                 .buttonStyle(.plain)
             }
             .padding(LassoSpacing.lg.rawValue)
-            .background(Color.white)
+            .background(scheme.surface)
             .overlay(alignment: .bottom) { Divider() }
 
             // Form
@@ -56,13 +57,13 @@ public struct CreateContainerView: View {
                 }
                 .padding(LassoSpacing.lg.rawValue)
             }
-            .background(LassoColors.antPageBg)
+            .background(scheme.surfaceContainerLowest)
 
             // Footer
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Spacer()
                 Button { onDismiss() } label: { Text("Cancel") }
-                    .buttonStyle(GlassButtonStyle(.secondary))
+                    .buttonStyle(MD3ButtonStyle(.outlined))
                 Button {
                     Task {
                         if await viewModel.applyChanges() != nil {
@@ -76,11 +77,11 @@ public struct CreateContainerView: View {
                         Text(viewModel.isEditMode ? "Save Changes" : "Create")
                     }
                 }
-                .buttonStyle(GlassButtonStyle(.primary))
+                .buttonStyle(MD3ButtonStyle(.filled))
                 .disabled(!viewModel.isValid || viewModel.isCreating)
             }
             .padding(LassoSpacing.md.rawValue)
-            .background(Color.white)
+            .background(scheme.surface)
             .overlay(alignment: .top) { Divider() }
         }
         .frame(minWidth: 520, minHeight: 600)
@@ -92,15 +93,7 @@ public struct CreateContainerView: View {
     private var generalSection: some View {
         formCard("General") {
             formField("Name") {
-                TextField("my-container", text: $viewModel.name)
-                    .textFieldStyle(.plain)
-                    .padding(LassoSpacing.sm.rawValue)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                            .stroke(LassoColors.antBorder, lineWidth: 0.5)
-                    )
+                formTextField("my-container", text: $viewModel.name)
             }
             formField("Image") {
                 imageComboBox
@@ -129,18 +122,18 @@ public struct CreateContainerView: View {
                         showImageSuggestions.toggle()
                     } label: {
                         Image(systemName: showImageSuggestions ? "chevron.up" : "chevron.down")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(LassoColors.antTextSecondary)
+                            .font(MD3Typography.labelMedium)
+                            .foregroundStyle(scheme.onSurfaceVariant)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(LassoSpacing.sm.rawValue)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
+            .background(scheme.surfaceContainerHighest)
+            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                    .stroke(showImageSuggestions ? LassoColors.antBlue : LassoColors.antBorder, lineWidth: showImageSuggestions ? 1 : 0.5)
+                RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous)
+                    .stroke(showImageSuggestions ? scheme.primary : scheme.outline, lineWidth: showImageSuggestions ? 1 : 0.5)
             )
 
             if showImageSuggestions && !imageSuggestions.isEmpty {
@@ -152,17 +145,17 @@ public struct CreateContainerView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "square.stack.3d.up.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(LassoColors.antBlue)
+                                    .font(MD3Typography.bodySmall)
+                                    .foregroundStyle(scheme.primary)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(img.reference)
-                                        .font(.body)
-                                        .foregroundStyle(LassoColors.antTextPrimary)
+                                        .font(MD3Typography.bodyMedium)
+                                        .foregroundStyle(scheme.onSurface)
                                         .lineLimit(1)
                                     if let size = img.size {
                                         Text(size)
-                                            .font(.caption)
-                                            .foregroundStyle(LassoColors.antTextSecondary)
+                                            .font(MD3Typography.bodySmall)
+                                            .foregroundStyle(scheme.onSurfaceVariant)
                                     }
                                 }
                                 Spacer()
@@ -172,18 +165,16 @@ public struct CreateContainerView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .background(Color.white)
-                        .onHover { h in _ = h }
                         if img.id != imageSuggestions.prefix(8).last?.id {
                             Divider().padding(.leading, 28)
                         }
                     }
                 }
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
+                .background(scheme.surfaceContainerHigh)
+                .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                        .stroke(LassoColors.antBorder, lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous)
+                        .stroke(scheme.outlineVariant, lineWidth: 0.5)
                 )
                 .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
                 .zIndex(100)
@@ -196,13 +187,13 @@ public struct CreateContainerView: View {
     private var resourcesSection: some View {
         formCard("Resources") {
             HStack {
-                Text("CPU Cores").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                Text("CPU Cores").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                 Spacer()
                 Stepper("\(viewModel.cpuCount)", value: $viewModel.cpuCount, in: 1...ProcessInfo.processInfo.processorCount)
             }
             Divider()
             HStack {
-                Text("Memory (MiB)").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                Text("Memory (MiB)").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                 Spacer()
                 HStack(spacing: 4) {
                     TextField("", value: $viewModel.memoryMiB, format: .number)
@@ -212,7 +203,7 @@ public struct CreateContainerView: View {
                         .onChange(of: viewModel.memoryMiB) {
                             if viewModel.memoryMiB < 128 { viewModel.memoryMiB = 128 }
                         }
-                    Text("MiB").font(.body).foregroundStyle(LassoColors.antTextSecondary)
+                    Text("MiB").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurfaceVariant)
                 }
             }
         }
@@ -223,7 +214,7 @@ public struct CreateContainerView: View {
     private var networkingSection: some View {
         formCard("Networking") {
             HStack {
-                Text("Mode").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                Text("Mode").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                 Spacer()
                 Picker("", selection: $viewModel.networkMode) {
                     Text("NAT").tag(NetworkSpec.NetworkMode.nat)
@@ -236,43 +227,28 @@ public struct CreateContainerView: View {
             if viewModel.networkMode == .bridged {
                 Divider()
                 formField("Bridge Interface") {
-                    TextField("en0", text: $viewModel.bridgeInterface)
-                        .textFieldStyle(.plain)
-                        .padding(LassoSpacing.sm.rawValue)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                                .stroke(LassoColors.antBorder, lineWidth: 0.5)
-                        )
+                    formTextField("en0", text: $viewModel.bridgeInterface)
                 }
             }
             Divider()
             VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
                 Text("Port Mappings")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                 Text("Format: hostPort:containerPort  or  hostPort:containerPort/tcp")
-                    .font(.caption2)
-                    .foregroundStyle(LassoColors.antTextDisabled)
+                    .font(MD3Typography.labelSmall)
+                    .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
                 ForEach(viewModel.portMappingEntries.indices, id: \.self) { i in
                     HStack(spacing: LassoSpacing.sm.rawValue) {
-                        TextField("8080:80", text: $viewModel.portMappingEntries[i])
-                            .textFieldStyle(.plain)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(LassoSpacing.sm.rawValue)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                            .overlay(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                                .stroke(LassoColors.antBorder, lineWidth: 0.5))
+                        formTextField("8080:80", text: $viewModel.portMappingEntries[i], monospaced: true)
                         Button { viewModel.portMappingEntries.remove(at: i) } label: {
-                            Image(systemName: "minus.circle.fill").foregroundStyle(LassoColors.antError)
+                            Image(systemName: "minus.circle.fill").foregroundStyle(scheme.error)
                         }.buttonStyle(.plain)
                     }
                 }
                 Button { viewModel.portMappingEntries.append("") } label: {
                     Label("Add Port", systemImage: "plus")
-                        .font(.subheadline).foregroundStyle(LassoColors.antBlue)
+                        .font(MD3Typography.labelLarge).foregroundStyle(scheme.primary)
                 }.buttonStyle(.plain)
             }
         }
@@ -284,12 +260,11 @@ public struct CreateContainerView: View {
         formCard("Volumes & Mounts") {
             if viewModel.volumeMountEntries.isEmpty {
                 Text("No mounts configured.")
-                    .font(.caption)
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.bodySmall)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                     .padding(.vertical, LassoSpacing.xs.rawValue)
             } else {
                 VStack(spacing: 0) {
-                    // Column headers
                     HStack(spacing: LassoSpacing.sm.rawValue) {
                         Text("SOURCE")
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -299,21 +274,14 @@ public struct CreateContainerView: View {
                             .frame(width: 28, alignment: .center)
                         Spacer().frame(width: 28)
                     }
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(LassoColors.antTextDisabled)
+                    .font(MD3Typography.labelSmall)
+                    .foregroundStyle(scheme.onSurfaceVariant.opacity(0.6))
                     .padding(.bottom, LassoSpacing.xs.rawValue)
 
                     ForEach($viewModel.volumeMountEntries) { $entry in
                         HStack(spacing: LassoSpacing.sm.rawValue) {
                             HStack(spacing: 4) {
-                                TextField("pgdata  or  /host/path", text: $entry.source)
-                                    .textFieldStyle(.plain)
-                                    .font(.system(.body, design: .monospaced))
-                                    .padding(LassoSpacing.sm.rawValue)
-                                    .background(Color.white)
-                                    .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                                    .overlay(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                                        .stroke(LassoColors.antBorder, lineWidth: 0.5))
+                                formTextField("pgdata  or  /host/path", text: $entry.source, monospaced: true)
                                 Button {
                                     let panel = NSOpenPanel()
                                     panel.canChooseDirectories = true
@@ -325,25 +293,18 @@ public struct CreateContainerView: View {
                                     }
                                 } label: {
                                     Image(systemName: "folder")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(LassoColors.antBlue)
+                                        .font(MD3Typography.labelMedium)
+                                        .foregroundStyle(scheme.primary)
                                         .frame(width: 26, height: 26)
-                                        .background(LassoColors.antBlue.opacity(0.08))
-                                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                                        .background(scheme.primaryContainer)
+                                        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
                                 }
                                 .buttonStyle(.plain)
-                                .help("Pick folder…")
+                                .help("Pick folder\u{2026}")
                             }
                             .frame(maxWidth: .infinity)
 
-                            TextField("/var/lib/data", text: $entry.target)
-                                .textFieldStyle(.plain)
-                                .font(.system(.body, design: .monospaced))
-                                .padding(LassoSpacing.sm.rawValue)
-                                .background(Color.white)
-                                .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                                .overlay(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                                    .stroke(LassoColors.antBorder, lineWidth: 0.5))
+                            formTextField("/var/lib/data", text: $entry.target, monospaced: true)
                                 .frame(maxWidth: .infinity)
 
                             Toggle("", isOn: $entry.readOnly)
@@ -355,7 +316,7 @@ public struct CreateContainerView: View {
                                 viewModel.volumeMountEntries.removeAll { $0.id == entry.id }
                             } label: {
                                 Image(systemName: "minus.circle.fill")
-                                    .foregroundStyle(LassoColors.antError)
+                                    .foregroundStyle(scheme.error)
                             }
                             .buttonStyle(.plain)
                             .frame(width: 28)
@@ -374,14 +335,14 @@ public struct CreateContainerView: View {
                 viewModel.volumeMountEntries.append(VolumeMountEntry())
             } label: {
                 Label("Add Mount", systemImage: "plus.circle")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(LassoColors.antBlue)
+                    .font(MD3Typography.labelLarge)
+                    .foregroundStyle(scheme.primary)
             }
             .buttonStyle(.plain)
 
             Text("Named volume (e.g. pgdata) or absolute host path (e.g. /Users/me/data). Named volumes must be created first in the Volumes tab.")
-                .font(.caption)
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .font(MD3Typography.bodySmall)
+                .foregroundStyle(scheme.onSurfaceVariant)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -392,17 +353,10 @@ public struct CreateContainerView: View {
         formCard("Environment Variables") {
             ForEach(viewModel.environmentEntries.indices, id: \.self) { i in
                 HStack(spacing: LassoSpacing.xs.rawValue) {
-                    TextField("KEY=value", text: $viewModel.environmentEntries[i])
-                        .textFieldStyle(.plain)
-                        .font(.system(.body, design: .monospaced))
-                        .padding(LassoSpacing.sm.rawValue)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                        .overlay(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                            .stroke(LassoColors.antBorder, lineWidth: 0.5))
+                    formTextField("KEY=value", text: $viewModel.environmentEntries[i], monospaced: true)
                     Button { viewModel.environmentEntries.remove(at: i) } label: {
                         Image(systemName: "minus.circle.fill")
-                            .foregroundStyle(LassoColors.antError)
+                            .foregroundStyle(scheme.error)
                     }.buttonStyle(.plain)
                 }
             }
@@ -410,8 +364,8 @@ public struct CreateContainerView: View {
                 viewModel.environmentEntries.append("")
             } label: {
                 Label("Add Variable", systemImage: "plus")
-                    .font(.subheadline)
-                    .foregroundStyle(LassoColors.antBlue)
+                    .font(MD3Typography.labelLarge)
+                    .foregroundStyle(scheme.primary)
             }.buttonStyle(.plain)
         }
     }
@@ -422,20 +376,13 @@ public struct CreateContainerView: View {
         formCard("DNS") {
             if !viewModel.dnsServers.isEmpty {
                 Text("Nameservers")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                 ForEach(viewModel.dnsServers.indices, id: \.self) { i in
                     HStack(spacing: LassoSpacing.xs.rawValue) {
-                        TextField("8.8.8.8", text: $viewModel.dnsServers[i])
-                            .textFieldStyle(.plain)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(LassoSpacing.sm.rawValue)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                            .overlay(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                                .stroke(LassoColors.antBorder, lineWidth: 0.5))
+                        formTextField("8.8.8.8", text: $viewModel.dnsServers[i], monospaced: true)
                         Button { viewModel.dnsServers.remove(at: i) } label: {
-                            Image(systemName: "minus.circle.fill").foregroundStyle(LassoColors.antError)
+                            Image(systemName: "minus.circle.fill").foregroundStyle(scheme.error)
                         }.buttonStyle(.plain)
                     }
                 }
@@ -443,20 +390,13 @@ public struct CreateContainerView: View {
             if !viewModel.dnsSearchDomains.isEmpty {
                 Divider()
                 Text("Search Domains")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(LassoColors.antTextSecondary)
+                    .font(MD3Typography.labelMedium)
+                    .foregroundStyle(scheme.onSurfaceVariant)
                 ForEach(viewModel.dnsSearchDomains.indices, id: \.self) { i in
                     HStack(spacing: LassoSpacing.xs.rawValue) {
-                        TextField("example.com", text: $viewModel.dnsSearchDomains[i])
-                            .textFieldStyle(.plain)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(LassoSpacing.sm.rawValue)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
-                            .overlay(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                                .stroke(LassoColors.antBorder, lineWidth: 0.5))
+                        formTextField("example.com", text: $viewModel.dnsSearchDomains[i], monospaced: true)
                         Button { viewModel.dnsSearchDomains.remove(at: i) } label: {
-                            Image(systemName: "minus.circle.fill").foregroundStyle(LassoColors.antError)
+                            Image(systemName: "minus.circle.fill").foregroundStyle(scheme.error)
                         }.buttonStyle(.plain)
                     }
                 }
@@ -464,12 +404,12 @@ public struct CreateContainerView: View {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Button { viewModel.dnsServers.append("") } label: {
                     Label("Add Nameserver", systemImage: "plus")
-                        .font(.subheadline).foregroundStyle(LassoColors.antBlue)
+                        .font(MD3Typography.labelLarge).foregroundStyle(scheme.primary)
                 }.buttonStyle(.plain)
                 Spacer()
                 Button { viewModel.dnsSearchDomains.append("") } label: {
                     Label("Add Search Domain", systemImage: "plus")
-                        .font(.subheadline).foregroundStyle(LassoColors.antBlue)
+                        .font(MD3Typography.labelLarge).foregroundStyle(scheme.primary)
                 }.buttonStyle(.plain)
             }
         }
@@ -481,33 +421,33 @@ public struct CreateContainerView: View {
         formCard("Options") {
             Toggle(isOn: $viewModel.rosetta) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Rosetta").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("Rosetta").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                     Text("Enable x86/x64 translation (macOS 13+)")
-                        .font(.caption).foregroundStyle(LassoColors.antTextSecondary)
+                        .font(MD3Typography.bodySmall).foregroundStyle(scheme.onSurfaceVariant)
                 }
             }
             Divider()
             Toggle(isOn: $viewModel.sshForwarding) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("SSH Agent Forwarding").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("SSH Agent Forwarding").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                     Text("Forward host SSH agent socket into container")
-                        .font(.caption).foregroundStyle(LassoColors.antTextSecondary)
+                        .font(MD3Typography.bodySmall).foregroundStyle(scheme.onSurfaceVariant)
                 }
             }
             Divider()
             Toggle(isOn: $viewModel.tty) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("TTY").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("TTY").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                     Text("Allocate a pseudo-TTY for the container process")
-                        .font(.caption).foregroundStyle(LassoColors.antTextSecondary)
+                        .font(MD3Typography.bodySmall).foregroundStyle(scheme.onSurfaceVariant)
                 }
             }
             Divider()
             Toggle(isOn: $viewModel.interactive) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Interactive (stdin)").font(.body).foregroundStyle(LassoColors.antTextPrimary)
+                    Text("Interactive (stdin)").font(MD3Typography.bodyMedium).foregroundStyle(scheme.onSurface)
                     Text("Keep stdin open even when not attached")
-                        .font(.caption).foregroundStyle(LassoColors.antTextSecondary)
+                        .font(MD3Typography.bodySmall).foregroundStyle(scheme.onSurfaceVariant)
                 }
             }
         }
@@ -520,58 +460,52 @@ public struct CreateContainerView: View {
         if let error = viewModel.errorMessage {
             HStack(spacing: LassoSpacing.sm.rawValue) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(LassoColors.antError)
+                    .foregroundStyle(scheme.error)
                 Text(error)
-                    .font(.body)
-                    .foregroundStyle(LassoColors.antError)
+                    .font(MD3Typography.bodyMedium)
+                    .foregroundStyle(scheme.error)
             }
             .padding(LassoSpacing.md.rawValue)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(LassoColors.antErrorBg)
-            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue))
+            .background(scheme.errorContainer)
+            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.lg.rawValue, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue)
-                    .stroke(LassoColors.antError.opacity(0.3), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: LassoRadius.lg.rawValue, style: .continuous)
+                    .stroke(scheme.error.opacity(0.3), lineWidth: 0.5)
             )
         }
     }
 
     // MARK: - Helpers
 
-    private func formCard<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(LassoColors.antTextPrimary)
-                Spacer()
-            }
-            .padding(.horizontal, LassoSpacing.md.rawValue)
-            .padding(.vertical, LassoSpacing.sm.rawValue)
-            .background(Color(red: 0.980, green: 0.980, blue: 0.980))
-
-            Divider()
-
+    private func formCard<Content: View>(_ title: String, @ViewBuilder content: @escaping () -> Content) -> some View {
+        MD3SectionCard(title, variant: .outlined) {
             VStack(alignment: .leading, spacing: LassoSpacing.sm.rawValue) {
                 content()
             }
-            .padding(LassoSpacing.md.rawValue)
+            .padding(.vertical, LassoSpacing.sm.rawValue)
         }
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous)
-                .stroke(LassoColors.antBorder, lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
     }
 
     private func formField<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: LassoSpacing.xs.rawValue) {
             Text(label)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(LassoColors.antTextSecondary)
+                .font(MD3Typography.labelMedium)
+                .foregroundStyle(scheme.onSurfaceVariant)
             content()
         }
+    }
+
+    private func formTextField(_ placeholder: String, text: Binding<String>, monospaced: Bool = false) -> some View {
+        TextField(placeholder, text: text)
+            .textFieldStyle(.plain)
+            .font(monospaced ? .system(.body, design: .monospaced) : MD3Typography.bodyMedium)
+            .padding(LassoSpacing.sm.rawValue)
+            .background(scheme.surfaceContainerHighest)
+            .clipShape(RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: LassoRadius.sm.rawValue, style: .continuous)
+                    .stroke(scheme.outline, lineWidth: 0.5)
+            )
     }
 }

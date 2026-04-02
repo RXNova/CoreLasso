@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct HelpView: View {
 
+    @Environment(\.md3Scheme) private var scheme
     private let sections: [HelpSection]
 
     public init() {
@@ -15,22 +16,22 @@ public struct HelpView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "questionmark.circle.fill")
                         .font(.system(size: 32))
-                        .foregroundStyle(LassoColors.antBlue)
+                        .foregroundStyle(scheme.primary)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Help & Documentation")
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(LassoColors.antTextPrimary)
-                        Text("CoreLasso · macOS Container Manager")
-                            .font(.subheadline)
-                            .foregroundStyle(LassoColors.antTextSecondary)
+                            .font(MD3Typography.headlineSmall)
+                            .foregroundStyle(scheme.onSurface)
+                        Text("CoreLasso \u{00B7} macOS Container Manager")
+                            .font(MD3Typography.bodyMedium)
+                            .foregroundStyle(scheme.onSurfaceVariant)
                     }
                     Spacer()
                 }
                 .padding(24)
-                .background(LassoColors.antCardBg)
+                .background(scheme.surface)
                 .overlay(alignment: .bottom) {
                     Rectangle()
-                        .fill(LassoColors.antBorder)
+                        .fill(scheme.outlineVariant)
                         .frame(height: 1)
                 }
 
@@ -43,7 +44,7 @@ public struct HelpView: View {
                 .padding(20)
             }
         }
-        .background(LassoColors.antPageBg.ignoresSafeArea())
+        .background(scheme.surfaceContainerLowest.ignoresSafeArea())
         .navigationTitle("Help")
     }
 
@@ -91,57 +92,57 @@ struct HelpSection: Identifiable {
 
 private struct HelpSectionCard: View {
     let section: HelpSection
+    @Environment(\.md3Scheme) private var scheme
     @State private var expanded = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Title bar
             Button {
                 withAnimation(.easeInOut(duration: 0.18)) { expanded.toggle() }
             } label: {
                 HStack {
                     Text(section.title)
-                        .font(.headline)
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.titleMedium)
+                        .foregroundStyle(scheme.onSurface)
                     Spacer()
                     Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(LassoColors.antTextSecondary)
+                        .font(MD3Typography.labelMedium)
+                        .foregroundStyle(scheme.onSurfaceVariant)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(LassoColors.arcTableHeader)
+                .padding(.horizontal, LassoSpacing.lg.rawValue)
+                .padding(.vertical, 14)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .pointerStyle(.link)
 
             if expanded {
-                Divider()
-                // Render markdown body via AttributedString
+                Rectangle()
+                    .fill(scheme.outlineVariant.opacity(0.25))
+                    .frame(height: 0.5)
+                    .padding(.horizontal, LassoSpacing.md.rawValue)
+
                 if let attr = try? AttributedString(
                     markdown: section.body,
                     options: .init(allowsExtendedAttributes: true,
                                   interpretedSyntax: .inlineOnlyPreservingWhitespace)
                 ) {
                     Text(attr)
-                        .font(.body)
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyMedium)
+                        .foregroundStyle(scheme.onSurface)
                         .textSelection(.enabled)
-                        .padding(16)
+                        .padding(LassoSpacing.lg.rawValue)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     Text(section.body)
-                        .font(.body)
-                        .foregroundStyle(LassoColors.antTextPrimary)
+                        .font(MD3Typography.bodyMedium)
+                        .foregroundStyle(scheme.onSurface)
                         .textSelection(.enabled)
-                        .padding(16)
+                        .padding(LassoSpacing.lg.rawValue)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
-        .background(LassoColors.antCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: LassoRadius.md.rawValue))
-        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+        .md3Card(.outlined)
     }
 }
